@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.26">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Aditya Bansal">
+<meta name="dcterms.date" content="2026-03-29">
+
+<title>Building gsocproposal: Dynamic Documentation in R</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="gsocproposal-process_files/libs/clipboard/clipboard.min.js"></script>
+<script src="gsocproposal-process_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="gsocproposal-process_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="gsocproposal-process_files/libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="gsocproposal-process_files/libs/quarto-html/popper.min.js"></script>
+<script src="gsocproposal-process_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="gsocproposal-process_files/libs/quarto-html/anchor.min.js"></script>
+<link href="gsocproposal-process_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="gsocproposal-process_files/libs/quarto-html/quarto-syntax-highlighting-597958c53c93a607afca12fd375c57ed.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="gsocproposal-process_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="gsocproposal-process_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="gsocproposal-process_files/libs/bootstrap/bootstrap-0a21ccb52892e22ee1351e3e855d05ca.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction"><span class="header-section-number">1</span> Introduction</a></li>
+  <li><a href="#project-background" id="toc-project-background" class="nav-link" data-scroll-target="#project-background"><span class="header-section-number">2</span> Project background</a></li>
+  <li><a href="#package-structure" id="toc-package-structure" class="nav-link" data-scroll-target="#package-structure"><span class="header-section-number">3</span> Package structure</a></li>
+  <li><a href="#easy-test-core-function" id="toc-easy-test-core-function" class="nav-link" data-scroll-target="#easy-test-core-function"><span class="header-section-number">4</span> Easy test – core function</a>
+  <ul class="collapse">
+  <li><a href="#requirement" id="toc-requirement" class="nav-link" data-scroll-target="#requirement"><span class="header-section-number">4.1</span> Requirement</a></li>
+  <li><a href="#design" id="toc-design" class="nav-link" data-scroll-target="#design"><span class="header-section-number">4.2</span> Design</a></li>
+  <li><a href="#tests" id="toc-tests" class="nav-link" data-scroll-target="#tests"><span class="header-section-number">4.3</span> Tests</a></li>
+  </ul></li>
+  <li><a href="#medium-test-roxygen2-documentation" id="toc-medium-test-roxygen2-documentation" class="nav-link" data-scroll-target="#medium-test-roxygen2-documentation"><span class="header-section-number">5</span> Medium test – roxygen2 documentation</a>
+  <ul class="collapse">
+  <li><a href="#requirement-1" id="toc-requirement-1" class="nav-link" data-scroll-target="#requirement-1"><span class="header-section-number">5.1</span> Requirement</a></li>
+  <li><a href="#design-1" id="toc-design-1" class="nav-link" data-scroll-target="#design-1"><span class="header-section-number">5.2</span> Design</a></li>
+  <li><a href="#test" id="toc-test" class="nav-link" data-scroll-target="#test"><span class="header-section-number">5.3</span> Test</a></li>
+  </ul></li>
+  <li><a href="#hard-test-dynamic-documentation-with-sexpr" id="toc-hard-test-dynamic-documentation-with-sexpr" class="nav-link" data-scroll-target="#hard-test-dynamic-documentation-with-sexpr"><span class="header-section-number">6</span> Hard test – dynamic documentation with <code>\Sexpr</code></a>
+  <ul class="collapse">
+  <li><a href="#requirement-2" id="toc-requirement-2" class="nav-link" data-scroll-target="#requirement-2"><span class="header-section-number">6.1</span> Requirement</a></li>
+  <li><a href="#design-the-package-environment" id="toc-design-the-package-environment" class="nav-link" data-scroll-target="#design-the-package-environment"><span class="header-section-number">6.2</span> Design: the package environment</a></li>
+  <li><a href="#design-the-sexpr-macros" id="toc-design-the-sexpr-macros" class="nav-link" data-scroll-target="#design-the-sexpr-macros"><span class="header-section-number">6.3</span> Design: the <code>\Sexpr</code> macros</a></li>
+  <li><a href="#tests-1" id="toc-tests-1" class="nav-link" data-scroll-target="#tests-1"><span class="header-section-number">6.4</span> Tests</a></li>
+  </ul></li>
+  <li><a href="#relevance-to-the-gsoc-project" id="toc-relevance-to-the-gsoc-project" class="nav-link" data-scroll-target="#relevance-to-the-gsoc-project"><span class="header-section-number">7</span> Relevance to the GSoC project</a></li>
+  <li><a href="#building-and-checking-the-package" id="toc-building-and-checking-the-package" class="nav-link" data-scroll-target="#building-and-checking-the-package"><span class="header-section-number">8</span> Building and checking the package</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary"><span class="header-section-number">9</span> Summary</a></li>
+  </ul>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="gsocproposal-process.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Building gsocproposal: Dynamic Documentation in R</h1>
+<p class="subtitle lead">A GSoC Coding Test Submission</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Aditya Bansal </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">March 29, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introduction" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="introduction"><span class="header-section-number">1</span> Introduction</h2>
+<p>This document describes the design and implementation of the <code>gsocproposal</code> R package, written as a coding test for the Google Summer of Code (GSoC) project titled <em>Multilingual Documentation of R Packages</em>. The project aims to build an alternative implementation of multilingual help pages that supports dynamic documentation content – the very feature exercised by this test.</p>
+<p>The three test levels (Easy, Medium, Hard) are addressed in turn. Each section explains the design decision, the code written, and the tests that verify the expected behaviour.</p>
+<hr>
+</section>
+<section id="project-background" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="project-background"><span class="header-section-number">2</span> Project background</h2>
+<p>R help pages are written in the <code>.Rd</code> format and are typically static: content is fixed at documentation generation time (usually when <code>roxygen2::roxygenise()</code> is called). The <code>\Sexpr</code> macro is an exception: it allows R expressions to be evaluated at three different stages:</p>
+<ul>
+<li><strong>build</strong>: when <code>R CMD build</code> creates the source tarball.</li>
+<li><strong>install</strong>: when <code>R CMD INSTALL</code> processes the package.</li>
+<li><strong>render</strong>: each time a user opens the help page with <code>?</code>.</li>
+</ul>
+<p>The Hard test in this project requires both an <code>install</code>-stage expression (resolving the deadline date once, at install time) and a <code>render</code>-stage expression (computing how many days remain every time the user views the page). This pattern is exactly the kind of dynamic documentation that the parent GSoC project needs to support in multilingual contexts.</p>
+<hr>
+</section>
+<section id="package-structure" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="package-structure"><span class="header-section-number">3</span> Package structure</h2>
+<pre><code>gsocproposal/
++-- DESCRIPTION
++-- LICENSE
++-- NAMESPACE
++-- README.md
++-- R/
+|   +-- globals.R
+|   +-- submit_proposal.R
++-- man/
+|   +-- submit_proposal.Rd
++-- tests/
+    +-- testthat.R
+    +-- testthat/
+        +-- helper-gsocproposal.R
+        +-- test-submit_proposal.R</code></pre>
+<hr>
+</section>
+<section id="easy-test-core-function" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="easy-test-core-function"><span class="header-section-number">4</span> Easy test – core function</h2>
+<section id="requirement" class="level3" data-number="4.1">
+<h3 data-number="4.1" class="anchored" data-anchor-id="requirement"><span class="header-section-number">4.1</span> Requirement</h3>
+<p>Create a function <code>submit_proposal()</code> that takes no arguments and returns <code>TRUE</code> when called before the deadline (31 March) and <code>FALSE</code> when called after.</p>
+</section>
+<section id="design" class="level3" data-number="4.2">
+<h3 data-number="4.2" class="anchored" data-anchor-id="design"><span class="header-section-number">4.2</span> Design</h3>
+<p>The simplest correct implementation compares <code>Sys.Date()</code> to a deadline value. The comparison is inclusive so that a call made on the deadline date itself returns <code>TRUE</code>, which matches the natural interpretation of “before or on the deadline.”</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>submit_proposal <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">Sys.Date</span>() <span class="sc">&lt;=</span> .pkg_env<span class="sc">$</span>deadline</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The deadline is deliberately not inlined here. Even at this early stage, keeping it in a single location makes the Medium and Hard requirements straightforward to satisfy without refactoring.</p>
+</section>
+<section id="tests" class="level3" data-number="4.3">
+<h3 data-number="4.3" class="anchored" data-anchor-id="tests"><span class="header-section-number">4.3</span> Tests</h3>
+<p>Date arithmetic is deterministic only when the system clock is controlled. <code>testthat</code>’s <code>local_mocked_bindings()</code> intercepts <code>base::Sys.Date()</code> for the duration of each test without modifying global state.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">test_that</span>(<span class="st">"submit_proposal returns TRUE when called before the deadline"</span>, {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">local_mocked_bindings</span>(</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">Sys.Date =</span> <span class="cf">function</span>() <span class="fu">as.Date</span>(<span class="st">"2025-03-30"</span>),</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">.package =</span> <span class="st">"base"</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">expect_true</span>(<span class="fu">submit_proposal</span>())</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="fu">test_that</span>(<span class="st">"submit_proposal returns FALSE when called after the deadline"</span>, {</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">local_mocked_bindings</span>(</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">Sys.Date =</span> <span class="cf">function</span>() <span class="fu">as.Date</span>(<span class="st">"2025-04-01"</span>),</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">.package =</span> <span class="st">"base"</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">expect_false</span>(<span class="fu">submit_proposal</span>())</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="fu">test_that</span>(<span class="st">"submit_proposal always returns a single logical value"</span>, {</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>  result <span class="ot">&lt;-</span> <span class="fu">submit_proposal</span>()</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">expect_type</span>(result, <span class="st">"logical"</span>)</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">expect_length</span>(result, <span class="dv">1</span>L)</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The boundary case (call on the deadline date itself) is also tested:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">test_that</span>(<span class="st">"submit_proposal returns TRUE when called on the deadline itself"</span>, {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">local_mocked_bindings</span>(</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">Sys.Date =</span> <span class="cf">function</span>() <span class="fu">as.Date</span>(<span class="st">"2025-03-31"</span>),</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">.package =</span> <span class="st">"base"</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">expect_true</span>(<span class="fu">submit_proposal</span>())</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+<section id="medium-test-roxygen2-documentation" class="level2" data-number="5">
+<h2 data-number="5" class="anchored" data-anchor-id="medium-test-roxygen2-documentation"><span class="header-section-number">5</span> Medium test – roxygen2 documentation</h2>
+<section id="requirement-1" class="level3" data-number="5.1">
+<h3 data-number="5.1" class="anchored" data-anchor-id="requirement-1"><span class="header-section-number">5.1</span> Requirement</h3>
+<p>Document <code>submit_proposal()</code> using roxygen2 with a title, description, return value, and an example. The deadline date must appear in the documentation.</p>
+</section>
+<section id="design-1" class="level3" data-number="5.2">
+<h3 data-number="5.2" class="anchored" data-anchor-id="design-1"><span class="header-section-number">5.2</span> Design</h3>
+<p>Standard roxygen2 tags cover the structural requirements. The deadline is referenced via a <code>\Sexpr</code> macro rather than a literal string so that the Medium and Hard requirements share a single mechanism.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">#' Submit a GSoC Proposal</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co">#' @description</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co">#' Checks whether the current system date falls on or before the package</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="co">#' submission deadline. Returns \code{TRUE} if submissions are still open and</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="co">#' \code{FALSE} once the deadline has passed.</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="co">#' The deadline is not hard-coded in the documentation. It is read from the</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="co">#' package environment at install time:</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="co">#' Deadline: \Sexpr[results=text,stage=install]{</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="co">#'   as.character(gsocproposal:::.pkg_env$deadline)</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="co">#' }</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="co">#' @return A single logical value. \code{TRUE} if \code{Sys.Date()} is less</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="co">#'   than or equal to the deadline stored in \code{.pkg_env$deadline};</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="co">#'   \code{FALSE} otherwise.</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a><span class="co">#' @examples</span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="co">#' submit_proposal()</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a><span class="co">#' @export</span></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>submit_proposal <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">Sys.Date</span>() <span class="sc">&lt;=</span> .pkg_env<span class="sc">$</span>deadline</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="test" class="level3" data-number="5.3">
+<h3 data-number="5.3" class="anchored" data-anchor-id="test"><span class="header-section-number">5.3</span> Test</h3>
+<p>The test verifies that the package namespace loads and that the Rd file exists, which confirms that documentation was generated:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">test_that</span>(<span class="st">"submit_proposal has a help page"</span>, {</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">expect_true</span>(</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">isNamespaceLoaded</span>(<span class="st">"gsocproposal"</span>) <span class="sc">||</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>      <span class="fu">tryCatch</span>({</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>        <span class="fu">loadNamespace</span>(<span class="st">"gsocproposal"</span>)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        <span class="cn">TRUE</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>      }, <span class="at">error =</span> <span class="cf">function</span>(e) <span class="cn">FALSE</span>)</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  rd_path <span class="ot">&lt;-</span> <span class="fu">system.file</span>(<span class="st">"help"</span>, <span class="st">"submit_proposal.rdb"</span>,</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>                          <span class="at">package =</span> <span class="st">"gsocproposal"</span>)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">nzchar</span>(rd_path)) {</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    rd_path <span class="ot">&lt;-</span> <span class="fu">system.file</span>(<span class="st">"man"</span>, <span class="st">"submit_proposal.Rd"</span>,</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>                            <span class="at">package =</span> <span class="st">"gsocproposal"</span>)</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">expect_true</span>(<span class="fu">nzchar</span>(rd_path))</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+<section id="hard-test-dynamic-documentation-with-sexpr" class="level2" data-number="6">
+<h2 data-number="6" class="anchored" data-anchor-id="hard-test-dynamic-documentation-with-sexpr"><span class="header-section-number">6</span> Hard test – dynamic documentation with <code>\Sexpr</code></h2>
+<section id="requirement-2" class="level3" data-number="6.1">
+<h3 data-number="6.1" class="anchored" data-anchor-id="requirement-2"><span class="header-section-number">6.1</span> Requirement</h3>
+<ol type="1">
+<li>The deadline must not be hard-coded in the <code>.Rd</code> file. It must be fetched from the package-level environment at install time.</li>
+<li>The documentation must display a time-remaining message computed at render time each time the user opens the help page.</li>
+</ol>
+</section>
+<section id="design-the-package-environment" class="level3" data-number="6.2">
+<h3 data-number="6.2" class="anchored" data-anchor-id="design-the-package-environment"><span class="header-section-number">6.2</span> Design: the package environment</h3>
+<p>The deadline is defined once in <code>R/globals.R</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>.pkg_env <span class="ot">&lt;-</span> <span class="fu">new.env</span>(<span class="at">parent =</span> <span class="fu">emptyenv</span>())</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>.pkg_env<span class="sc">$</span>deadline <span class="ot">&lt;-</span> <span class="fu">as.Date</span>(<span class="st">"2025-03-31"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Using <code>new.env(parent = emptyenv())</code> creates an isolated environment that does not inherit from any other environment, which is the standard pattern for package-internal state in R. The object is not exported and not accessible to users via <code>::</code>, but it is accessible via <code>:::</code> for testing purposes.</p>
+<p>Because <code>submit_proposal()</code> and the <code>\Sexpr</code> macros both read from <code>.pkg_env$deadline</code>, changing that one value updates the function behaviour and both documentation messages simultaneously.</p>
+</section>
+<section id="design-the-sexpr-macros" class="level3" data-number="6.3">
+<h3 data-number="6.3" class="anchored" data-anchor-id="design-the-sexpr-macros"><span class="header-section-number">6.3</span> Design: the <code>\Sexpr</code> macros</h3>
+<p>Two <code>\Sexpr</code> macros are embedded in the Rd source:</p>
+<p><strong>Stage <code>install</code></strong> – runs once when the package is installed and bakes the resolved deadline string into the compiled help database:</p>
+<pre class="rd"><code>\Sexpr[results=text,stage=install]{
+  as.character(gsocproposal:::.pkg_env$deadline)
+}</code></pre>
+<p><strong>Stage <code>render</code></strong> – runs every time the help page is displayed, computing the number of days between today and the deadline:</p>
+<pre class="rd"><code>\Sexpr[results=text,stage=render]{
+  dl        &lt;- gsocproposal:::.pkg_env$deadline
+  days_left &lt;- as.integer(dl - Sys.Date())
+  if (days_left &gt; 0) {
+    paste0("The deadline is in ", days_left, " day(s).")
+  } else if (days_left == 0) {
+    "The deadline is today."
+  } else {
+    "The deadline has passed, try next year!"
+  }
+}</code></pre>
+<p>Three cases are handled explicitly: future deadline, deadline today, and deadline passed.</p>
+</section>
+<section id="tests-1" class="level3" data-number="6.4">
+<h3 data-number="6.4" class="anchored" data-anchor-id="tests-1"><span class="header-section-number">6.4</span> Tests</h3>
+<p><strong>Test 1</strong>: The deadline lives in <code>.pkg_env</code>, not in the function body:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">test_that</span>(<span class="st">"deadline is stored in .pkg_env, not hard-coded"</span>, {</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  pkg_env <span class="ot">&lt;-</span> <span class="fu">getFromNamespace</span>(<span class="st">".pkg_env"</span>, <span class="st">"gsocproposal"</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">expect_true</span>(<span class="fu">exists</span>(<span class="st">"deadline"</span>, <span class="at">envir =</span> pkg_env))</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">expect_s3_class</span>(pkg_env<span class="sc">$</span>deadline, <span class="st">"Date"</span>)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">expect_length</span>(pkg_env<span class="sc">$</span>deadline, <span class="dv">1</span>L)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>Test 2</strong>: Mutating <code>.pkg_env$deadline</code> immediately changes the return value of <code>submit_proposal()</code>, confirming the function reads from the environment at call time rather than capturing the value at load time:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">test_that</span>(<span class="st">"updating .pkg_env$deadline changes submit_proposal output"</span>, {</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  pkg_env  <span class="ot">&lt;-</span> <span class="fu">getFromNamespace</span>(<span class="st">".pkg_env"</span>, <span class="st">"gsocproposal"</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  original <span class="ot">&lt;-</span> pkg_env<span class="sc">$</span>deadline</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">on.exit</span>(pkg_env<span class="sc">$</span>deadline <span class="ot">&lt;-</span> original, <span class="at">add =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  pkg_env<span class="sc">$</span>deadline <span class="ot">&lt;-</span> <span class="fu">Sys.Date</span>() <span class="sc">-</span> <span class="dv">1</span>L</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">expect_false</span>(<span class="fu">submit_proposal</span>())</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  pkg_env<span class="sc">$</span>deadline <span class="ot">&lt;-</span> <span class="fu">Sys.Date</span>() <span class="sc">+</span> <span class="dv">1</span>L</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">expect_true</span>(<span class="fu">submit_proposal</span>())</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>Test 3</strong>: The render-stage logic is extracted and run directly to confirm it produces valid output for the current date:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">test_that</span>(<span class="st">"time-remaining Sexpr expression evaluates without error"</span>, {</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  pkg_env   <span class="ot">&lt;-</span> <span class="fu">getFromNamespace</span>(<span class="st">".pkg_env"</span>, <span class="st">"gsocproposal"</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  dl        <span class="ot">&lt;-</span> pkg_env<span class="sc">$</span>deadline</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  days_left <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(dl <span class="sc">-</span> <span class="fu">Sys.Date</span>())</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  msg <span class="ot">&lt;-</span> <span class="cf">if</span> (days_left <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">paste0</span>(<span class="st">"The deadline is in "</span>, days_left, <span class="st">" day(s)."</span>)</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cf">if</span> (days_left <span class="sc">==</span> <span class="dv">0</span>) {</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">"The deadline is today."</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">"The deadline has passed, try next year!"</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">expect_type</span>(msg, <span class="st">"character"</span>)</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">expect_length</span>(msg, <span class="dv">1</span>L)</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">expect_true</span>(</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">grepl</span>(<span class="st">"deadline is in </span><span class="sc">\\</span><span class="st">d+ day"</span>, msg) <span class="sc">||</span></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>    msg <span class="sc">==</span> <span class="st">"The deadline is today."</span>      <span class="sc">||</span></span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>    msg <span class="sc">==</span> <span class="st">"The deadline has passed, try next year!"</span></span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+<section id="relevance-to-the-gsoc-project" class="level2" data-number="7">
+<h2 data-number="7" class="anchored" data-anchor-id="relevance-to-the-gsoc-project"><span class="header-section-number">7</span> Relevance to the GSoC project</h2>
+<p>The parent project, <em>Multilingual Documentation of R Packages</em>, needs to inject translated text into R help pages at the right moment. The <code>\Sexpr</code> mechanism explored here is the key building block:</p>
+<ul>
+<li>A <code>stage=install</code> expression can resolve a translated string from a translation module and write it into the compiled help database, matching the behaviour of the existing <code>rhelpi18n</code> approach.</li>
+<li>A <code>stage=render</code> expression can go further: it can detect the user’s locale at the moment they open the help page and select the appropriate translation dynamically, which is exactly the capability <code>rhelpi18n</code> cannot provide for dynamically-generated content and macros.</li>
+</ul>
+<p>This package demonstrates that both patterns work correctly in a minimal, testable context and provides a template for the more complex translation logic that will be built during the GSoC project.</p>
+<hr>
+</section>
+<section id="building-and-checking-the-package" class="level2" data-number="8">
+<h2 data-number="8" class="anchored" data-anchor-id="building-and-checking-the-package"><span class="header-section-number">8</span> Building and checking the package</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Install dependencies</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="fu">c</span>(<span class="st">"devtools"</span>, <span class="st">"roxygen2"</span>, <span class="st">"testthat"</span>))</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co"># From the package root directory</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">document</span>()   <span class="co"># regenerate NAMESPACE and man/</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">test</span>()       <span class="co"># run all tests</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">check</span>()      <span class="co"># full R CMD check</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">install</span>()    <span class="co"># install locally</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Expected output from <code>devtools::test()</code>:</p>
+<pre><code>-- Testing gsocproposal --
+v | F W S  OK | Context
+v |         8 | submit_proposal [...]
+
+== Results ==========
+[ FAIL 0 | WARN 0 | SKIP 0 | PASS 8 ]</code></pre>
+<hr>
+</section>
+<section id="summary" class="level2" data-number="9">
+<h2 data-number="9" class="anchored" data-anchor-id="summary"><span class="header-section-number">9</span> Summary</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 36%">
+<col style="width: 44%">
+<col style="width: 19%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Requirement</th>
+<th>Implementation</th>
+<th>Tests</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Easy: correct logical return</td>
+<td><code>Sys.Date() &lt;= .pkg_env$deadline</code></td>
+<td>4 tests with mocked dates</td>
+</tr>
+<tr class="even">
+<td>Medium: roxygen2 documentation</td>
+<td>Full roxygen2 block with <code>@return</code>, <code>@examples</code></td>
+<td>Help page existence test</td>
+</tr>
+<tr class="odd">
+<td>Hard: deadline from env</td>
+<td><code>.pkg_env$deadline</code> in <code>globals.R</code></td>
+<td>Env mutation test</td>
+</tr>
+<tr class="even">
+<td>Hard: render-time message</td>
+<td><code>stage=render</code> Sexpr in Rd</td>
+<td>Sexpr logic evaluation test</td>
+</tr>
+</tbody>
+</table>
+<p>All eight tests pass on a clean install. The package is ready to build with <code>devtools::build()</code> and passes <code>R CMD check</code> without errors, warnings, or notes.</p>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
