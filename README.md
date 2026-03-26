@@ -1,4 +1,4 @@
-# gsocproposal
+# Multilingual documentation generator for R packages
 
 An R package developed as a demonstration for the Google Summer of Code (GSoC)
 project on multilingual R package documentation. It provides a single function,
