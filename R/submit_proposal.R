@@ -1,0 +1,48 @@
+#' Submit a GSoC Proposal
+#'
+#' @description
+#' Checks whether the current system date falls on or before the package
+#' submission deadline. Returns \code{TRUE} if submissions are still open and
+#' \code{FALSE} once the deadline has passed.
+#'
+#' The deadline is not hard-coded in the documentation. It is read from the
+#' package environment at install time:
+#'
+#' Deadline: \Sexpr[results=text,stage=install]{
+#'   as.character(gsocproposal:::.pkg_env$deadline)
+#' }
+#'
+#' When you view this help page, the following message is computed live:
+#'
+#' \Sexpr[results=text,stage=render]{
+#'   dl        <- gsocproposal:::.pkg_env$deadline
+#'   days_left <- as.integer(dl - Sys.Date())
+#'   if (days_left > 0) {
+#'     paste0("The deadline is in ", days_left, " day(s).")
+#'   } else if (days_left == 0) {
+#'     "The deadline is today."
+#'   } else {
+#'     "The deadline has passed, try next year!"
+#'   }
+#' }
+#'
+#' @details
+#' The deadline is stored in \code{.pkg_env$deadline} (see \code{R/globals.R}).
+#' Update that single value to change the deadline everywhere in the package
+#' without re-running \code{roxygen2::roxygenise()}.
+#'
+#' Comparison is inclusive: a call made on the deadline date itself returns
+#' \code{TRUE}.
+#'
+#' @return A single logical value. \code{TRUE} if \code{Sys.Date()} is less
+#'   than or equal to the deadline stored in \code{.pkg_env$deadline};
+#'   \code{FALSE} otherwise.
+#'
+#' @examples
+#' # Check whether the submission window is currently open.
+#' submit_proposal()
+#'
+#' @export
+submit_proposal <- function() {
+  Sys.Date() <= .pkg_env$deadline
+}
