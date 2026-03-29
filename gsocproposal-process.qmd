@@ -10,6 +10,8 @@ format:
     number-sections: true
     code-fold: false
     highlight-style: github
+    embed-resources: true
+    self-contained: true
   pdf:
     toc: true
     number-sections: true
