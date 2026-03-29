@@ -1,5 +1,5 @@
 ---
-title: "Building gsocproposal: Dynamic Documentation in R"
+title: "Building gsocproposal: Multilingual Dynamic Documentation in R"
 subtitle: "A GSoC Coding Test Submission"
 author: "Aditya Bansal"
 date: "March 29, 2026"
