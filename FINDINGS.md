@@ -410,3 +410,129 @@ Start with **dplyr** (done, §6) → add **lintr** (inline) and **parsnip**
 hard structural stress test → use **vroom/DBI** as no-op round-trip guards.
 `Rscript sexpr-survey.R <pkg>` still works to dump live nodes once a package is
 installed.
+
+---
+
+## 9. The `gsocproposal` macro showcase (this package)
+
+Follow-up session. The demo package's single help page,
+[`man/submit_proposal.Rd`](man/submit_proposal.Rd), was rebuilt by hand into an
+exhaustive, **installs-clean (zero warnings)** showcase of every Rd construct, so
+we have a controlled fixture to test the translation pipeline against. Companion
+user-macro file: [`man/macros/gsoc-macros.Rd`](man/macros/gsoc-macros.Rd).
+
+### 9.1 What it exercises
+
+| Group | Constructs |
+|---|---|
+| `\Sexpr` stages | `stage=install` (deadline, baked to text), `stage=render` (live message), `stage=build`, default (= install) |
+| `\Sexpr` results | `results=text`, `results=verbatim` (`[1] 2`), `results=rd` (emits Rd, re-parsed), `results=hide`, `echo=TRUE` (echoes source) |
+| Conditionals | `#ifdef windows … #endif`, `#ifndef windows … #endif` (correct line-leading `#`, nested in a section) |
+| User macros | `\gsoc`, `\pkgenv` (0-arg), `\deadlineNote{#1}` (1-arg) from `man/macros/` |
+| Format conditionals | `\if{html}{\out{…}}`, `\if{text}{…}`, `\ifelse{html}{}{}` |
+| Inline markup | `\emph \strong \bold \code \var \pkg \file \option \env \command \kbd \sQuote \dQuote \dfn \acronym \cite \verb \samp \R \enc`, escaped `\%` |
+| Lists / table / math | `\itemize \enumerate \describe`, `\tabular`/`\tab`/`\cr`, `\eqn \deqn` |
+| Links | `\link`, `\link[pkg]`, `\link[=target]`, `\url`, `\href` |
+| Examples wrappers | `\dontrun \donttest \dontshow`; `\method` in `\usage`; `\dots` in `\arguments` |
+
+### 9.2 Verified rendering behaviour (Rd2txt + Rd2HTML, render stage)
+
+- **install** `\Sexpr` → `Deadline: 2025-03-31` baked into the `.rdb` as text.
+- **render** `\Sexpr` → recomputed live (`The deadline has passed…`, today's date).
+- **build** `\Sexpr` → evaluated when installing from a source *dir* too.
+- `#ifndef windows` branch shown, `#ifdef windows` branch dropped (Linux box).
+- `\if{html}{\out{...}}` emits raw `<strong>` in HTML, suppressed in text.
+- `\deadlineNote{2025-03-31}` → "The deadline is **2025-03-31**".
+
+### 9.3 Escaping gotcha — `results=rd` needs **four** backslashes
+
+A `results=rd` Sexpr whose R code returns Rd markup must be written with `\\\\` in
+the `.Rd` source: `\Sexpr[results=rd]{ "\\\\emph{x}" }`. Two layers halve it — the
+Rd-database deparse once, R string parsing again — leaving valid `\emph{x}` to
+re-parse. Two backslashes throws `'\e' is an unrecognized escape` at render.
+
+### 9.4 Live-vs-baked node counts (the project premise, on our own fixture)
+
+After install, `tools::Rd_db("gsocproposal")[["submit_proposal.Rd"]]` keeps
+**6 live `\Sexpr` nodes — all `stage=render`**; the install/build ones are gone
+(baked to text) and both `#ifdef` nodes are resolved away. Exactly the
+live-vs-baked split `rhelpi18n` must handle (§2, root cause #1).
+
+---
+
+## 10. How `tools::parse_Rd()` represents `\Sexpr` / `#ifdef` (tasks 2 & 5)
+
+Reusable inspector at repo root: [`../rd-inspect.R`](../rd-inspect.R) — parses the
+source `.Rd` *and* reads the installed db, then lists every `\Sexpr`,
+`#ifdef`/`#ifndef`, and `USERMACRO` node with its options.
+
+### 10.1 The parser identifies them natively (answer to task 2: **yes**)
+
+Each construct gets a dedicated `Rd_tag`, so detection is an attribute check — no
+string scraping:
+
+| Construct | Representation in the parse tree |
+|---|---|
+| `\Sexpr` | `Rd_tag = "\\Sexpr"`; stage/results in **`attr(node, "Rd_option")`** (e.g. `results=text,stage=render`); child `RCODE` node holds the R code |
+| `#ifdef` / `#ifndef` | `Rd_tag = "#ifdef"` / `"#ifndef"`; a **two-argument** node — `node[[1]]` = condition (` windows`), `node[[2]]` = conditional body (matches parseRd §2.3) |
+| user macro | `Rd_tag = "USERMACRO"` with **`attr(node, "macro")` = the macro name** (e.g. `"\\gsoc"`) |
+| format conditionals | `\\if`, `\\ifelse`, `\\out` |
+
+`is_render_sexpr()` from §2 is therefore the whole detector. The parser also
+exposes `attr(node, "srcref")` (line/col positions) for every node.
+
+### 10.2 Source parse vs installed db — the decisive contrast
+
+Same file, two views (via `../rd-inspect.R`):
+
+| | `parse_Rd(man/submit_proposal.Rd)` — **source** | `Rd_db("gsocproposal")` — **installed** |
+|---|---|---|
+| `\Sexpr` nodes | **9** (build + install + render + default) | **6** — render only |
+| `#ifdef` / `#ifndef` | **2** (both branches, unevaluated) | **0** — resolved to one platform's plain text |
+
+This is root cause #1 demonstrated on our own fixture: build/install Sexpr bake to
+text and `#ifdef` collapses at install, so **module creation must read `Rd_db()`,
+not source `man/`**.
+
+### 10.3 `rdviewer` (task 5): useful for structure, blind to `Rd_option`
+
+[`rdviewer`](../rdviewer) overrides `print.Rd` to collapse the deep nested list
+into a readable `<tag>` tree — good for *seeing nesting* at a glance. Two caveats
+for our use:
+
+1. **It does not print `Rd_option`** — so a Sexpr's `stage`/`results` and a
+   `\link`'s target are invisible in its tree. For us that's the key attribute.
+2. **S3 `print.Rd` clashes with `tools`** — whichever package loads last wins
+   (observed `tools` overwriting `rdviewer` mid-session), so the tree is finicky.
+
+`../rd-inspect.R` includes a small **option-aware** tree that adds `[Rd_option=…]`,
+producing what we actually need:
+
+```
+└─[3]<\Sexpr>  [Rd_option=results=text,stage=render]
+    └─[1]<RCODE> "format(Sys.Date())"
+└─[5]<#ifdef>
+    └─[1]<NULL> └─[1]<TEXT> " windows\n"            # arg1 = condition
+    └─[2]<NULL> └─[1]<TEXT> "A Windows-only note.\n" # arg2 = body
+```
+
+Natural small upstream contribution: teach rdviewer to print `Rd_option`.
+
+### 10.4 Lead for the `\Mark_Sexpr` trace idea 
+
+Suggested a `\newcommand` marker to **keep a trace of text substituted
+by a `\Sexpr`**. The mechanism that makes this viable is now confirmed:
+`USERMACRO` nodes carry **`attr(node, "macro")` = the macro name** and **survive
+into the installed db** (`str()` shows `attr(*, "macro")= chr "\\gsoc"`). So a
+`\newcommand`-based wrapper around `\Sexpr` would leave a *findable marker* in the
+compiled tree — exactly the trace requested. Caveat to test next: the USERMACRO
+node stores a *flattened* copy of the macro body (e.g. `"The deadline is
+\strong{#1}.2025-03-31"`, `#1` unsubstituted), so a prototype must confirm the
+inner `\Sexpr` stays **live** alongside the marker, not flattened.
+
+### 10.5 Next: task 3
+
+Run the `main`-branch `rhelpi18n` flatten/translate over this package and confirm
+the prediction — paragraphs containing `\Sexpr` or `#ifdef` come back
+**untranslated**, while plain paragraphs translate. This fixture (§9) is built to
+make that test sharp.
