@@ -41,12 +41,16 @@ walk_rd <- function(node, depth = 0) {
 
   prefix <- strrep("  ", depth)
 
-  # Leaf nodes (character vectors): show content.
+  # Leaf nodes (character vectors): show content (+ macro trace if present).
   if (is.character(node)) {
+    macro   <- attr(node, "macro")
+    tagline <- if (!is.null(macro) && is.character(macro)) {
+      sprintf("%s [macro: %s]", tag, macro)
+    } else tag
     txt <- paste(node, collapse = "")
     txt <- gsub("\n", "\\\\n", txt)
     if (nchar(txt) > 80) txt <- paste0(substr(txt, 1, 77), "...")
-    cat(sprintf("%s%s: %s\n", prefix, tag, txt))
+    cat(sprintf("%s%s: %s\n", prefix, tagline, txt))
     return(invisible(NULL))
   }
 
