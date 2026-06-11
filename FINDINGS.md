@@ -536,3 +536,77 @@ Run the `main`-branch `rhelpi18n` flatten/translate over this package and confir
 the prediction — paragraphs containing `\Sexpr` or `#ifdef` come back
 **untranslated**, while plain paragraphs translate. This fixture (§9) is built to
 make that test sharp.
+
+---
+
+## 11. Session 3 — minimal fixtures, trace-wrapping, and a working `es` translation
+
+### 11.1 Demo fixtures (one construct per page, `?topic`-callable)
+`man/`: `sexpr_build`, `sexpr_install`, `sexpr_render`, `ifdef`, `ifndef`,
+`usermacro`, `test` (scratch), `greet` (translation demo). Inspectors:
+`walk_rdb_tree(topic)` (exported; reads the installed `.rdb`); sourceable live
+walkers in `scripts/walk_rd_file.R` → `walk_rd_file()` (source tree) and
+`walk_rdb_file()` (baked tree). Full per-construct trees: `docs/rdb-tree-report.md`.
+
+### 11.2 What survives into the compiled `Rd_db()` tree
+| Construct | In `Rd_db()` | Self-identifying? |
+|---|---|---|
+| build / install `\Sexpr` | plain `TEXT` (evaluated) | ❌ looks like prose |
+| render `\Sexpr` | live `\Sexpr` + `Rd_option` | ✅ |
+| `#ifdef` **inactive** | `COMMENT: "#ifdef <os> not active"` | ✅ trace left |
+| conditional **active** | plain `TEXT` | ❌ |
+| user macro | `USERMACRO` + `attr "macro"` | ✅ tagged + named |
+
+### 11.3 Live baked loop (no reinstall/restart)
+`walk_rdb_file(path)` = `parse_Rd()` → `tools:::prepare_Rd(stages=c("build","install"))`,
+reproducing the `.rdb` tree **in memory from a source file** — output identical to
+`Rd_db()`. `defines="windows"` previews the Windows `#ifdef` branch from Linux.
+(Uses an internal fn; verified on R 4.5.)
+
+### 11.4 Wrap-to-trace (`\Mark_Sexpr`) — prototyped (extends §10.4)
+- `\newcommand` markers leave `USERMACRO` nodes (`attr "macro"`), **survive
+  install**, are **invisible** in output → distinguish Sexpr-text from authored
+  prose. Empty open/close marker macros give a true start/end bracket.
+- **Underscore names break**: `\Sexpr_expanded` parses as built-in `\Sexpr` +
+  `_expanded`. Use letters only (`\SexprExpanded`).
+- **Install→render emit** (`\Sexpr[results=rd,stage=install]{…}` returning a
+  render `\Sexpr`): leaves a **live render node (trace) in the `.rdb`**, but R
+  **does not re-evaluate** it at help time → renders as literal source. Good as a
+  *marker*, not a value-renderer. Needs **4 backslashes** (`\\\\Sexpr`).
+- Nested `\Sexpr{\Sexpr{…}}` is **invalid** (outer `{}` must be R code).
+- Clean author path stays `\newcommand{\translate}{\Sexpr[results=text,stage=render]{#1}}`.
+
+### 11.5 No CRAN package uses all three stages
+`sexpr-usage.csv`: zero packages combine build+install+render — they specialize.
+So **`gsocproposal` is the only all-three fixture** (justifies the demo package).
+
+### 11.6 Working `es` translation
+- Module **`gsocproposal.es/`**: DESCRIPTION `Translates: gsocproposal (== 0.1.0)`,
+  `Language: es`; YAML in `inst/translations/greet.yaml`; `translations` object
+  built via `system.file`.
+- YAML generated from the **compiled `Rd_db` flatten** (originals match help-time →
+  sidesteps root-cause #1); dummy Spanish; the `\Sexpr` kept **verbatim** in `details`.
+- **Discovery = two DESCRIPTION fields.** rhelpi18n scans
+  `installed.packages(fields=c("Translates","Language"))`. Definitive check:
+  `rhelpi18n:::get_translation_modules("gsocproposal","es")` → `"gsocproposal.es"`.
+- **Demo:**
+  ```r
+  library(rhelpi18n); library(gsocproposal)
+  Sys.setenv(LANGUAGE = "es"); ?greet     # Spanish
+  ```
+  → Spanish title/description/value; the `details` **render Sexpr evaluates live
+  inside the Spanish text** (`La fecha actual es 2026-06-12…`); the install-baked
+  `R 4.5.3` is frozen into the translated string. `LANGUAGE="en"` → English.
+- **Updates §10.5:** render `\Sexpr` is *not* doomed to come back untranslated —
+  kept verbatim in the translation it re-parses and re-evaluates correctly. The
+  hard part is purely *not corrupting* the node (the placeholder problem, §5 #2).
+- Source dir ≠ runtime: a translation edit needs `R CMD INSTALL gsocproposal.es`
+  to land (same source-vs-installed split as the walkers).
+
+### 11.7 Gotchas (demo survival kit)
+- **Restart R after any (re)install** of the package *or* the module. Stale
+  `.getHelpFile` patch + module namespace + RStudio help cache → help-pane *500*.
+  A clean session fixes it; the shim works fine with the RStudio HTML pane.
+- `results=rd` and install→render emit both need **4 backslashes** in source.
+- Toolchain: use the `/usr/bin` R 4.5 pair; the stray `/usr/local/bin/Rscript`
+  (4.6) has its own empty library and can't `R CMD INSTALL`.
