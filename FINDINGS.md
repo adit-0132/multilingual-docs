@@ -610,3 +610,169 @@ So **`gsocproposal` is the only all-three fixture** (justifies the demo package)
 - `results=rd` and install→render emit both need **4 backslashes** in source.
 - Toolchain: use the `/usr/bin` R 4.5 pair; the stray `/usr/local/bin/Rscript`
   (4.6) has its own empty library and can't `R CMD INSTALL`.
+
+---
+
+## 12. Red-team of the proposal's placeholder design (§6–7 of the GSoC PDF)
+
+**The design.** Parse-tree-level throughout: (1) build modules from `tools::Rd_db()`
+(install Sexpr already baked); (2) flatten a section, replacing each **render-stage
+`\Sexpr`** with a numbered token `{SEXPR_0}` + pushing the live node to a
+`sexpr_store` side list, and `node_to_text()`-ing every other node; (3) YAML gains
+`sexpr_count`; (4) at help time, parse the translated scaffold, locate each
+`{SEXPR_N}` in the parsed tree, swap in the stored live node; (5) `.getHelpFile`
+shim; (6) HTML/JS per-section toggle.
+
+**What our work validates ✅**
+- Rd_db-as-source is correct (`greet` demo: install baked, originals match → root-cause-#1 sidestepped).
+- Placeholder + restore-live-node is the right core (`gsocproposal.es`: `\Sexpr` kept in the translated `details` re-parsed and **evaluated live**).
+- The side store is justified for a reason the proposal omits: a `results=rd` render Sexpr can't survive deparse→reparse (the 4-backslash trap, §11.7); keeping the node object avoids re-escaping.
+
+**Red-team 🚩 (severity-ordered)**
+
+1. **Token `{SEXPR_0}` uses Rd-special braces.** `{ }` group tokens (parseRd §2.2.3),
+   so after "parse scaffold → locate token," `{SEXPR_0}` is a `LIST` node, not findable
+   text. Fix: a sentinel with no special chars (`⟦rhi:0⟧`); or splice the node into the
+   **string before parsing** (what `greet` effectively did) and drop the parse-then-locate step.
+2. **"Never collapses to text" contradicts `node_to_text()` for all non-render nodes.**
+   `\link`, `\code`, `\eqn`, `\if{}`, **user macros** all get flattened — the same
+   root-cause-#2 fragility, just scoped out. Preserve everything that must stay verbatim
+   (the OPAQUE/TRANSPARENT buckets in `solution.md`), not only render Sexpr.
+3. **Flattener isn't recursive.** `lapply(section_nodes, …)` misses a render Sexpr nested
+   in `\if{html}{\Sexpr…}` (the **ergm** pattern, §8.4 — the heaviest real user) or inside
+   lists/items → collapsed → corrupted. Must recurse.
+4. **Install-stage volatility unhandled.** Fixes source-vs-installed, not install-vs-install.
+   `greet` froze `R 4.5.3` into the Spanish string; reinstall under a different R (or a
+   date/host-based install Sexpr) drifts the `original` → translation silently dropped. The
+   mentors' **trace-marker** idea (§11.4) is the missing complement; the proposal has no answer.
+5. **No token validation / MT-hostile token.** Requires `{SEXPR_0}` verbatim but specifies
+   no check. Machine translation (the step-3 plan) drops/reorders/strips placeholders. Need a
+   `sexpr_count` round-trip check ⇒ else fall back to the original section.
+6. **HTML+JS toggle asserted, not proven.** RStudio's help webview restricts inline
+   `<script>`, and the dynamic-help server is touchy (we hit a 500, §11.7). Spike it before
+   committing UI scope.
+7. **"Identical before/after no-op translation" (Phase-1 goal) is optimistic** given the
+   real escaping bugs: unescaped `...`/`%` (root-cause #3) and the 4-backslash `results=rd` case.
+8. **Shim robustness (low).** Mutating `utils:::.getHelpFile` via `unlockBinding` is the
+   established approach but fragile to R-internal changes, other patchers, and session staleness.
+
+**Reproduced live.** The exact-string version check (§5 #1, §3 `rd-translate.R`) was
+demonstrated: editing one word of `greet`'s title drifted its `original`, so **only the
+title** fell back to English while other sections stayed Spanish (§11.6 fix). This is
+red-team #4/#7 in practice — argues for a fingerprint match or a visible "out-of-date"
+signal instead of silent fallback.
+
+**Verdict.** Skeleton is sound and its happy path is demonstrated, but as written it is a
+render-Sexpr-only solution labelled "parse-tree-throughout." The four things that bite real
+packages — brace token, non-recursion, text-collapse of all other markup, no install-Sexpr
+trace — each have a concrete fix already in `solution.md` / §11.4.
+
+---
+
+## 13. Source↔installed diff — detecting install-stage Sexpr without author edits
+
+**Problem (reproduced).** rhelpi18n keys each section's translation on **exact-string
+equality** of the flattened `original`. An install-stage `\Sexpr` bakes a *volatile* value
+into that string, so the match breaks every install and the section **silently reverts** to
+the source language. Live demo with `greet`'s install Sexpr set to `format(Sys.time())`:
+```
+raw original  #1: ...installed at 2026-06-19 01:00:05...
+raw original  #2: ...installed at 2026-06-19 01:00:07...   identical? FALSE  -> translation dropped
+```
+
+**Idea.** No author edits, no wrapping. We already have both trees from **one source parse**:
+the source has the **live** `\Sexpr[stage=install]` node; `tools:::prepare_Rd(stages=c("build","install"))`
+reproduces the installed `.rdb` (build/install baked) — verified equivalent to `Rd_db()` (§11.3).
+Flatten **both** with the same `rhelpi18n:::rd_flatten` rhelpi18n uses at help time; the two
+`original` strings differ **only** where an install/build Sexpr sat (render Sexpr and the
+USERMACRO doubling are identical in both → cancel). So a plain string diff recovers the spans.
+
+**Algorithm** (`inst/detect_install_sexpr.R`, sourceable; no package-machinery changes):
+1. `src_o`  = `rd_flatten(parse_Rd(src))[[sec]]$original`  — install Sexpr appear as deparsed `\Sexpr[…stage=install…]{code}`.
+2. `inst_o` = `rd_flatten(prepare_Rd(…))[[sec]]$original`  — install Sexpr replaced by baked value.
+3. Regex the non-`stage=render` `\Sexpr[…]{…}` out of `src_o` → split `src_o` on them → static **anchors**.
+4. Locate the anchors sequentially in `inst_o`; the **gaps** are the baked values.
+5. Emit `scaffold` = `inst_o` with each baked span → `{ISEXPR_i}`, plus `spans` (code/option/baked) and `fingerprint = scaffold`.
+
+**Results.** `detect_install_sexpr("greet")$details`:
+```
+scaffold: The current date is \Sexpr[…stage=render]{ format(Sys.Date()) } and this package
+          was installed at {ISEXPR_0}.  …  A user macro: Google Summer of CodeGoogle Summer of Code
+{ISEXPR_0}  code=format(Sys.time())  [results=text,stage=install]  baked="2026-06-19 00:59:45"
+```
+- The **render** Sexpr is left untouched (already stable); only the **install** span is tokenised.
+- Poles check out: `sexpr_install` → one `{ISEXPR_0}` (`paste("installed under R", getRversion())`
+  → `"installed under R 4.5.3"`); `sexpr_render` → no spans, `scaffold == original`.
+
+**The payoff — stable key across installs:**
+```
+raw original  identical across two evals? -> FALSE   (rhelpi18n drops the translation)
+fingerprint   identical across two evals? -> TRUE    (…installed at {ISEXPR_0}…)
+recovered baked values: #1 "…01:00:05"  #2 "…01:00:07"   (correctly tokenised out)
+```
+So the volatile install value **no longer invalidates** the section. This is the concrete fix
+for red-team §12 #4 / the §11.6 title-drift class: match on the **scaffold fingerprint**
+(dynamic spans excluded), not the raw `original`.
+
+**Scope / next.** Detector runs at **module-creation time** to produce the stable key + the
+side-list of install spans; it is not yet wired into `i18n_module_create` / rd-translate's
+match. `#ifdef` is the same shape (source `#ifdef` node vs installed resolved text) and folds
+in as another dynamic-span class. The in-memory `prepare_Rd` path is used (guarantees
+byte-identical anchors, needs no reinstall); a real `Rd_db()` comparison would add
+whitespace-tolerant matching.
+
+---
+
+## 14. Runtime integration — token-aware match (supersedes §13 "Scope/next")
+
+§13's stable key is now **wired into rhelpi18n's help-time path**, so `?greet` under
+`LANGUAGE=es` shows the Spanish `details` **with the live install value embedded** and
+**survives reinstalls** — no English fallback.
+
+**What changed (one function).** Patched `rhelpi18n/R/rd-translate.R`: `translate()` now calls
+a new `match_and_fill()` instead of the exact-string `==`. The stored `original` is treated as
+a **scaffold template** — `{ISEXPR_i}` tokens become regex capture groups; the live (baked)
+section is matched against it; captured install values are substituted into the translation's
+matching `{ISEXPR_i}`. **No tokens → exact match**, so every existing module is unaffected.
+
+**Old vs new — the only step that differs:**
+
+| | OLD (`==`) | NEW (`match_and_fill`) |
+|---|---|---|
+| stored `original` | full baked sentence | scaffold with `{ISEXPR_0}` |
+| match | `live == stored` | regex(scaffold), static+render text as anchors, `(.*?)` at tokens |
+| on match | use translation | capture live value(s) → substitute into translation's `{ISEXPR_0}` |
+| install value drifts | match FALSE → **English** | still matches → **Spanish + live value** |
+| no tokens | (only mode) | exact `==` → existing modules identical |
+
+**Module side.** `gsocproposal.es/inst/translations/greet.yaml` `details` now stores the
+detector's scaffold as `original` (`…installed at {ISEXPR_0}…`) and a Spanish scaffold as
+`translation` (`…se instaló a las {ISEXPR_0}…`), generated via
+`detect_install_sexpr("greet")` → `yaml::write_yaml` (still by hand).
+
+**End-to-end result (verified, Rd2txt via the patched shim):**
+```
+es render, install A:  …se instaló a las 2026-06-19 01:23:34. …   (Spanish, live timestamp)
+reinstall package → install B (new timestamp)
+es render, install B:  …se instaló a las 2026-06-19 01:39:18. …   (STILL Spanish, no fallback)
+en render:             …installed at <timestamp>. …               (unchanged English)
+```
+The render Sexpr (date) still evaluates live too. Contrast §13: the *raw* `original` differs
+across the two installs (old `==` would have dropped the translation); the scaffold match does not.
+
+**Honest edges.**
+- This patches the **upstream `rhelpi18n` repo** (`R/rd-translate.R`, `main`) — a local demo
+  patch, not committed/pushed.
+- Scaffold generation is still **manual** (detector → YAML); wiring `detect_install_sexpr`
+  into `i18n_module_create()` so authors get tokens automatically is the next step.
+- If surrounding prose genuinely changes, the regex won't match → keeps original (correct
+  "stale" behavior; a visible "out-of-date" notice is a future nicety).
+- `match_and_fill` regex-escapes the static/render anchors; `#ifdef` spans not yet tokenised.
+
+A simple-to-advanced walkthrough of the old vs new flow (for explaining to mentors) is the
+verbal companion to this section; the one-slide version: *R bakes install-Sexpr output
+(timestamps/versions) into help text; old rhelpi18n matched it by exact string so the value
+drifting on every install silently reverted sections to English; we diff source-vs-installed to
+find those spans, tokenise them into a stable scaffold, and match/translate against the
+scaffold — capturing the live value and substituting it in. Translations now survive reinstalls;
+existing modules are unaffected.*
