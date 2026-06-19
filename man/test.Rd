@@ -8,7 +8,7 @@
 \description{
 Plain prose to edit.
 A render Sexpr:  \Sexpr[results=text,stage=render]{ 1 + 1 }
-A build Sexpr : \Sexpr[results=text,stage=build]{ "build-stage output (baked at build time)"}
+A build Sexpr : \Sexpr[results=text,stage=build]{ "build-stage example output (baked at build time)"}
 An install Sexpr: \Sexpr[results=text,stage=install]{ paste("R", getRversion()) }
 Wrapped install->render (computes at install, leaves a LIVE render-node trace in
 the .rdb; note R does not re-evaluate the emitted node, so it renders literally):
