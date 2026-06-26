@@ -776,3 +776,78 @@ drifting on every install silently reverted sections to English; we diff source-
 find those spans, tokenise them into a stable scaffold, and match/translate against the
 scaffold — capturing the live value and substituting it in. Translations now survive reinstalls;
 existing modules are unaffected.*
+
+---
+
+## 15. Hardening + extensions (stress-test, user macros, #ifdef) and two edge questions
+
+Executed the approved plan: stress harness, a robustness refactor, and extensions to
+user-defined macros and `#ifdef`. All work is gated by the harness
+(`multilingual-docs/inst/stress_test.R`, **102/102 checks**, 12 topics incl. 6 new
+`man/stress_*.Rd` adversarial fixtures). Five self-contained commits on the fork
+`adit-0132/rhelpi18n` branch `dynamic-sexpr`:
+```
+93ae92f Translate the active #ifdef branch
+b000ddf Flatten #ifdef / #ifndef nodes instead of erroring
+765ffd8 Don't duplicate user-macro expansions when flattening
+b34a149 Match scaffold tokens by fixed-string anchors, not regex
+113a3a6 Match translations against a scaffold template, not exact strings
+```
+(`multilingual-docs` detector/harness/fixtures remain uncommitted on `main`.)
+
+### 15.1 Robustness refactor (supersedes §14's regex description)
+- **Detector** (`inst/detect_install_sexpr.R`): replaced the `\{[^}]*\}` regex (which
+  truncated multi-line install Sexpr whose code has nested braces) with a **parse-tree walk**
+  collecting non-render `\Sexpr` nodes; each node's exact deparse (`rhelpi18n:::to_text`) is
+  located in the flattened source by **fixed-string** search. Brace/multi-line proof.
+- **Runtime `match_and_fill`**: replaced the regex template + `esc()` + `(.*?)` (which needed
+  dotall and failed on **multi-line baked output**) with **fixed-string anchor alignment** —
+  boundary anchors pinned via `startsWith`/`endsWith`, interior anchors located sequentially.
+  No escaping; spans newlines. No-token sections still exact-match.
+
+### 15.2 User-defined macros — de-doubled
+`to_text()` emitted both the `USERMACRO` provenance marker **and** its expansion, so a
+flattened section duplicated every macro (`Google Summer of CodeGoogle Summer of Code`) and
+leaked raw `#1` args. Fix: skip `USERMACRO` nodes in `to_text()` → expansion flattens once and
+translates as ordinary prose (a macro expansion is stable across installs, so no token needed).
+
+### 15.3 `#ifdef` / `#ifndef`
+- **Crash fix:** `to_text()` returned `x[[1]]` (a list) for `#ifdef`, erroring `rd_flatten`.
+  Now deparsed like markup → usable `#ifdef <cond> … #endif` marker.
+- **Detection:** the detector also collects `#ifdef`/`#ifndef` nodes as opaque dynamic spans.
+- **Branch translation (the enumeration idea):** `match_and_fill` gained an `ifdef` table
+  (token → branch translation). The active branch (anything that is **not** R's
+  `#ifdef <cond> not active` marker — a free, reliable active/inactive signal) is replaced by
+  its stored translation; inactive keeps the invisible marker. Verified: `?ifndef` under `es`
+  renders `ESTA LÍNEA SE MUESTRA EN UNIX Y MACOS (NO WINDOWS).` Cross-platform: the module
+  carries the translation, R picks the platform's branch.
+- *Known limit:* two **adjacent** dynamic spans with no static separator (`{A}{B}`) round-trip
+  but can't be individually attributed (`"" + "AB"`) — inherent to anchor alignment.
+
+### 15.4 Edge question — RTL languages: **yes, at the pipeline level**
+The mechanism is direction-agnostic UTF-8 string substitution, and **matching never touches
+the translation** (it matches the English source/baked text; RTL appears only in output).
+Demonstrated: `match_and_fill("Installed at 2026-06-25", "Installed at {ISEXPR_0}", "تم التثبيت في {ISEXPR_0}")`
+→ `تم التثبيت في 2026-06-25`. The only RTL concerns are **downstream display/bidi** (the LTR
+token and LTR values like dates inside RTL text) — the renderer's job (HTML help/RStudio pane
+do bidi; terminals weaker). Not yet rendered end-to-end through the help pane.
+
+### 15.5 Edge question — source adds prose around the Sexpr (staleness)
+The module is keyed to the **old** scaffold; after a package update the behaviour splits
+(demonstrated against `match_and_fill`):
+
+| Package change | Result |
+|---|---|
+| adds prose **adjacent** to the Sexpr, leading anchor still matches | **absorbed** into the captured value → new English leaks into the translation, untranslated. **Silent.** |
+| **reworded a static anchor** | match fails → **NULL → rhelpi18n keeps the original (English)** — safe fallback |
+| adds prose after, but a stable **suffix anchor** remains | absorbed (same as the adjacent case) |
+
+Core tension: the scaffold match is *permissive* (so it survives the volatile install value),
+but that same permissiveness swallows new prose added next to the Sexpr. A change to **static
+anchor text** instead fails safely. **Resolution:** regenerate the module against the updated
+package (the maintenance loop — what `i18n_module_create`/an `update` tool should automate).
+At help time there is no source to diff, so the practical staleness *guard* is the module's
+`Translates: pkg (== x.y.z)` version pin (warn/skip on mismatch). The robust hardening is a
+**per-section fingerprint + a visible "translation out of date" signal** so the adjacent-add
+case degrades *loudly* (fall back + notice) instead of leaking English — the same staleness
+concern as §12 #4/#7.
