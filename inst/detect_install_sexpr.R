@@ -12,11 +12,19 @@
 # How: we already have both trees from one source parse.
 #   - source parse        -> install/build \Sexpr are LIVE nodes
 #   - prepare_Rd(...)      -> reproduces the installed .rdb (build+install baked)
-# Flatten both with the SAME rhelpi18n:::rd_flatten rhelpi18n uses at help time;
-# the two `original` strings differ ONLY where an install/build Sexpr sat. Diff them.
+# Install/build \Sexpr nodes are collected from the PARSE TREE (so multi-line code
+# and nested braces are handled by the parser, not a fragile regex); each node's
+# exact deparse (rhelpi18n:::to_text) is then located by fixed-string search in the
+# flattened source, and the matching gap in the baked flatten is its baked value.
+#
+# Sentinel note: {ISEXPR_i} is collision-safe in practice because Rd strips literal
+# braces from prose (a doc that writes "{ISEXPR_0}" flattens to "ISEXPR_0"), so a
+# real token never clashes with authored text.
 #
 #   source("multilingual-docs/inst/detect_install_sexpr.R")
 #   print_install_sexpr(detect_install_sexpr("greet"))
+
+`%||%` <- function(a, b) if (is.null(a)) b else a
 
 # ---- flatten a section to the exact string rhelpi18n compares -----------------
 .flatten_original <- function(rd) {
@@ -29,24 +37,43 @@
   out
 }
 
-# Any \Sexpr[...]{...} whose option is NOT stage=render is install/build/default-install.
-.INSTALL_SEXPR_RE <- "\\\\Sexpr\\[[^]]*\\]\\{[^}]*\\}"
-
-.is_render <- function(sexpr_str) grepl("stage=render", sexpr_str, fixed = TRUE)
-
-# Pull the install/build \Sexpr substrings (in order) from a source `original`.
-.find_install_sexprs <- function(src_o) {
-  m <- gregexpr(.INSTALL_SEXPR_RE, src_o, perl = TRUE)[[1]]
-  if (m[1] == -1) return(character(0))
-  hits <- regmatches(src_o, gregexpr(.INSTALL_SEXPR_RE, src_o, perl = TRUE))[[1]]
-  hits[!vapply(hits, .is_render, logical(1))]
+# ---- collect dynamic markers from the PARSE TREE ------------------------------
+# Returns records {marker, kind, option, code} for every dynamic node, in document
+# order. Dynamic = a non-render \Sexpr (install / build / default-install) or a
+# #ifdef / #ifndef block. `marker` is the node's exact deparse (== how it appears
+# in the flattened source), so a later fixed-string search finds it regardless of
+# newlines or nested braces. Dynamic nodes are opaque: we do NOT recurse into them.
+.collect_sexpr_markers <- function(node, acc = list()) {
+  tag <- attr(node, "Rd_tag")
+  if (identical(tag, "\\Sexpr") &&
+      !isTRUE(grepl("stage=render", attr(node, "Rd_option") %||% ""))) {
+    acc[[length(acc) + 1L]] <- list(
+      marker = rhelpi18n:::to_text(node), kind = "sexpr",
+      option = attr(node, "Rd_option") %||% "",
+      code   = trimws(paste(rapply(node, function(x) as.character(x), how = "unlist"),
+                            collapse = "")))
+    return(acc)
+  }
+  if (!is.null(tag) && tag %in% c("#ifdef", "#ifndef")) {
+    acc[[length(acc) + 1L]] <- list(
+      marker = rhelpi18n:::to_text(node), kind = "ifdef", option = tag,
+      code   = trimws(paste(rapply(node, function(x) as.character(x), how = "unlist"),
+                            collapse = "")))
+    return(acc)
+  }
+  if (is.list(node)) for (child in node) acc <- .collect_sexpr_markers(child, acc)
+  acc
 }
 
-# Extract just the R code from a \Sexpr[opt]{code} string.
-.sexpr_code   <- function(s) trimws(sub("^\\\\Sexpr\\[[^]]*\\]\\{(.*)\\}$", "\\1", s))
-.sexpr_option <- function(s) sub("^\\\\Sexpr\\[([^]]*)\\]\\{.*$", "\\1", s)
+# Records whose deparse occurs in `src_o`, ordered by position in `src_o`.
+.markers_in <- function(src_o, records) {
+  hit <- Filter(function(r) grepl(r$marker, src_o, fixed = TRUE), records)
+  if (length(hit) == 0) return(hit)
+  pos <- vapply(hit, function(r) regexpr(r$marker, src_o, fixed = TRUE)[[1]], numeric(1))
+  hit[order(pos)]
+}
 
-# Split a string on a set of literal markers, returning the static anchors between.
+# Split `s` on a set of literal markers, returning the static anchors between.
 .split_on <- function(s, markers) {
   anchors <- character(0)
   rest <- s
@@ -63,7 +90,6 @@
 .align_anchors <- function(anchors, inst_o) {
   n_spans <- length(anchors) - 1L
   baked <- character(n_spans)
-  pos <- 1L
   cur <- inst_o
   consume <- function(anchor, s) {
     if (nchar(anchor) == 0) return(list(before = "", rest = s))
@@ -71,11 +97,10 @@
     if (p == -1) stop("anchor not found while aligning installed original")
     list(before = substr(s, 1, p - 1), rest = substr(s, p + nchar(anchor), nchar(s)))
   }
-  # first anchor sits at the start
   step <- consume(anchors[1], cur); cur <- step$rest
   for (i in seq_len(n_spans)) {
     nxt <- consume(anchors[i + 1L], cur)
-    baked[i] <- nxt$before          # text between anchor i and i+1 = baked value
+    baked[i] <- nxt$before
     cur <- nxt$rest
   }
   baked
@@ -91,6 +116,7 @@ detect_install_sexpr <- function(topic,
   src_rd  <- tools::parse_Rd(file.path(src_dir, "man", paste0(topic, ".Rd")), macros = macros)
   baked   <- tools:::prepare_Rd(src_rd, defines = defines, stages = c("build", "install"))
 
+  records   <- .collect_sexpr_markers(src_rd)
   src_orig  <- .flatten_original(src_rd)
   inst_orig <- .flatten_original(baked)
 
@@ -98,23 +124,23 @@ detect_install_sexpr <- function(topic,
   for (sec in names(inst_orig)) {
     inst_o <- inst_orig[[sec]]
     src_o  <- src_orig[[sec]]
-    markers <- if (is.null(src_o)) character(0) else .find_install_sexprs(src_o)
+    recs   <- if (is.null(src_o)) list() else .markers_in(src_o, records)
 
-    if (length(markers) == 0) {
+    if (length(recs) == 0) {
       out[[sec]] <- list(original = inst_o, scaffold = inst_o,
                          spans = list(), fingerprint = inst_o)
       next
     }
-    anchors <- .split_on(src_o, markers)
+    markers    <- vapply(recs, function(r) r$marker, character(1))
+    anchors    <- .split_on(src_o, markers)
     baked_vals <- .align_anchors(anchors, inst_o)
 
-    # rebuild scaffold from the same anchors, install spans -> {ISEXPR_i}
     scaffold <- anchors[1]
-    spans <- vector("list", length(markers))
-    for (i in seq_along(markers)) {
+    spans <- vector("list", length(recs))
+    for (i in seq_along(recs)) {
       scaffold <- paste0(scaffold, "{ISEXPR_", i - 1L, "}", anchors[i + 1L])
-      spans[[i]] <- list(i = i - 1L, source_code = .sexpr_code(markers[i]),
-                         option = .sexpr_option(markers[i]), baked_value = baked_vals[i])
+      spans[[i]] <- list(i = i - 1L, kind = recs[[i]]$kind, source_code = recs[[i]]$code,
+                         option = recs[[i]]$option, baked_value = baked_vals[i])
     }
     out[[sec]] <- list(original = inst_o, scaffold = scaffold,
                        spans = spans, fingerprint = scaffold)
@@ -133,7 +159,7 @@ print_install_sexpr <- function(res) {
     } else {
       for (s in r$spans) {
         cat(sprintf("  {ISEXPR_%d}  code=%s  [%s]  baked=%s\n",
-                    s$i, s$source_code, s$option, dQuote(s$baked_value)))
+                    s$i, gsub("\n", " ", s$source_code), s$option, dQuote(s$baked_value)))
       }
       cat("\n")
     }
