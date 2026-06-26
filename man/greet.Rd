@@ -9,7 +9,7 @@ dynamic content, so it should translate cleanly into another language.
 }
 \details{
 The current date is \Sexpr[results=text,stage=render]{ format(Sys.Date()) } and
-this package was installed at \Sexpr[results=text,stage=install]{ format(Sys.time()) }.
+this package was here's a change installed at \Sexpr[results=text,stage=install]{ format(Sys.time()) }.
 
 Because this paragraph embeds Sexpr macros, the translator sees them as text.
 
