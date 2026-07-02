@@ -106,8 +106,34 @@
   baked
 }
 
-#' Detect install/build \Sexpr spans for one help topic.
-#' @return named list per translatable section: {original, scaffold, spans, fingerprint}
+# Build a scaffold for one flattened string pair (source vs baked).
+.build_scaffold <- function(src_o, inst_o, records) {
+  recs <- if (is.null(src_o)) list() else .markers_in(src_o, records)
+  if (length(recs) == 0) {
+    return(list(original = inst_o, scaffold = inst_o, spans = list(), fingerprint = inst_o))
+  }
+  markers    <- vapply(recs, function(r) r$marker, character(1))
+  anchors    <- .split_on(src_o, markers)
+  baked_vals <- .align_anchors(anchors, inst_o)
+
+  scaffold <- anchors[1]
+  spans <- vector("list", length(recs))
+  for (i in seq_along(recs)) {
+    scaffold <- paste0(scaffold, "{ISEXPR_", i - 1L, "}", anchors[i + 1L])
+    spans[[i]] <- list(i = i - 1L, kind = recs[[i]]$kind, source_code = recs[[i]]$code,
+                       option = recs[[i]]$option, baked_value = baked_vals[i])
+  }
+  list(original = inst_o, scaffold = scaffold, spans = spans, fingerprint = scaffold)
+}
+
+# A flattened *simple* section holds a single {original,...}; \arguments instead
+# holds a named list of those, one per \item.
+.is_simple   <- function(x) is.list(x) && is.character(x$original)
+.is_itemlist <- function(x) is.list(x) && length(x) > 0 && all(vapply(x, .is_simple, logical(1)))
+
+#' Detect install/build \Sexpr (and #ifdef) spans for one help topic.
+#' @return per section: {original, scaffold, spans, fingerprint}; \arguments is a
+#'   named list of the same, one per \item.
 detect_install_sexpr <- function(topic,
                                  src_dir = "~/Projects/0-multilingual/multilingual-docs",
                                  defines = .Platform$OS.type) {
@@ -117,51 +143,41 @@ detect_install_sexpr <- function(topic,
   baked   <- tools:::prepare_Rd(src_rd, defines = defines, stages = c("build", "install"))
 
   records   <- .collect_sexpr_markers(src_rd)
-  src_orig  <- .flatten_original(src_rd)
-  inst_orig <- .flatten_original(baked)
+  src_flat  <- rhelpi18n:::rd_flatten(src_rd)
+  inst_flat <- rhelpi18n:::rd_flatten(baked)
 
   out <- list()
-  for (sec in names(inst_orig)) {
-    inst_o <- inst_orig[[sec]]
-    src_o  <- src_orig[[sec]]
-    recs   <- if (is.null(src_o)) list() else .markers_in(src_o, records)
-
-    if (length(recs) == 0) {
-      out[[sec]] <- list(original = inst_o, scaffold = inst_o,
-                         spans = list(), fingerprint = inst_o)
-      next
+  for (sec in names(inst_flat)) {
+    iel <- inst_flat[[sec]]; sel <- src_flat[[sec]]
+    if (.is_simple(iel)) {
+      out[[sec]] <- .build_scaffold(sel$original, iel$original, records)
+    } else if (.is_itemlist(iel)) {                         # e.g. \arguments -> per \item
+      items <- list()
+      for (nm in names(iel)) {
+        so <- if (!is.null(sel) && !is.null(sel[[nm]])) sel[[nm]]$original else NULL
+        items[[nm]] <- .build_scaffold(so, iel[[nm]]$original, records)
+      }
+      out[[sec]] <- items
     }
-    markers    <- vapply(recs, function(r) r$marker, character(1))
-    anchors    <- .split_on(src_o, markers)
-    baked_vals <- .align_anchors(anchors, inst_o)
-
-    scaffold <- anchors[1]
-    spans <- vector("list", length(recs))
-    for (i in seq_along(recs)) {
-      scaffold <- paste0(scaffold, "{ISEXPR_", i - 1L, "}", anchors[i + 1L])
-      spans[[i]] <- list(i = i - 1L, kind = recs[[i]]$kind, source_code = recs[[i]]$code,
-                         option = recs[[i]]$option, baked_value = baked_vals[i])
-    }
-    out[[sec]] <- list(original = inst_o, scaffold = scaffold,
-                       spans = spans, fingerprint = scaffold)
   }
   out
 }
 
-#' Pretty-print a detect_install_sexpr() result.
-print_install_sexpr <- function(res) {
+#' Pretty-print a detect_install_sexpr() result (recurses into \arguments).
+print_install_sexpr <- function(res, prefix = "") {
+  clip <- function(s) { s <- gsub("\n", " ", s); if (nchar(s) > 90) paste0(substr(s,1,87),"...") else s }
   for (sec in names(res)) {
     r <- res[[sec]]
-    cat("==== ", sec, " ====\n", sep = "")
-    cat("  scaffold (fingerprint): ", gsub("\n", " ", r$scaffold), "\n", sep = "")
-    if (length(r$spans) == 0) {
-      cat("  install spans: none\n\n")
-    } else {
-      for (s in r$spans) {
-        cat(sprintf("  {ISEXPR_%d}  code=%s  [%s]  baked=%s\n",
-                    s$i, gsub("\n", " ", s$source_code), s$option, dQuote(s$baked_value)))
-      }
-      cat("\n")
+    if (!is.null(r$scaffold)) {
+      cat(prefix, "==== ", sec, " ====\n", sep = "")
+      cat(prefix, "  scaffold: ", clip(r$scaffold), "\n", sep = "")
+      if (length(r$spans) == 0) cat(prefix, "  spans: none\n", sep = "")
+      else for (s in r$spans)
+        cat(sprintf("%s  {ISEXPR_%d} kind=%s [%s] baked=%s\n",
+                    prefix, s$i, s$kind, s$option, dQuote(clip(s$baked_value))))
+    } else if (is.list(r)) {
+      cat(prefix, "==== ", sec, " (items) ====\n", sep = "")
+      print_install_sexpr(r, paste0(prefix, "  "))
     }
   }
   invisible(res)
