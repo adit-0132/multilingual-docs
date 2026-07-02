@@ -851,3 +851,76 @@ At help time there is no source to diff, so the practical staleness *guard* is t
 **per-section fingerprint + a visible "translation out of date" signal** so the adjacent-add
 case degrades *loudly* (fall back + notice) instead of leaking English — the same staleness
 concern as §12 #4/#7.
+
+## 16. Real CRAN binaries, `\arguments`, and one-call module creation
+
+Proved the whole approach works on a **real CRAN package** given only its installed binary
+plus the source tarball, and packaged it into a single call, `install_with_translation()`,
+now living in `rhelpi18n`. Commits: detector + harness `\arguments` support and `inst/demo.R`
+on `adit-0132/multilingual-docs@main` (`8be6125`, `4bfb3fa`, `9e5ec51`); the two rhelpi18n
+additions on `adit-0132/rhelpi18n@dynamic-sexpr` (`b9ff4ce`, `c74dd38`). The harness is now
+**108/108** (was §15's 102) after the `\arguments` fixtures, and the §15 detector/harness/
+fixtures are all committed (superseding §15's "uncommitted on main" note).
+
+### 16.1 `\arguments` extension — where real build/install Sexpr actually live
+The survey (§8) counted Sexpr per file; in practice the build/install ones usually sit **inside
+`\arguments \item{}{}`** (documenting an argument's allowed values), not in a top-level section.
+`detect_install_sexpr()` / `detect_scaffolds()` now treat `\arguments` as a **named list of
+per-`\item` scaffolds** (helper `.build_scaffold`; the pretty-printer and stress harness recurse
+via `leaves()`). The runtime already handled this: `translate()` recurses into list-valued
+sections, so `arguments -> item -> {original, translation}` matches with no runtime change.
+
+### 16.2 Translating from a CRAN binary + source (`xml2`)
+- **Auto source-fetch — feasible.** An installed CRAN package's `DESCRIPTION` gives `Package`,
+  `Version`, `Repository: CRAN`, and CRAN's URL is deterministic:
+  `…/src/contrib/PKG_VER.tar.gz` → `…/src/contrib/Archive/PKG/PKG_VER.tar.gz` (fallback for
+  superseded versions). So no manual download: derive the URL, fetch, untar `man/`. Pin the
+  **installed** version (Archive fallback), not `download.packages()`'s current one, so source
+  and binary align — the version `Translates: pkg (== x.y.z)` already records.
+- **`stage=build` is *not* baked by `R CMD build`.** `xml2`'s source tarball still contains the
+  live `\Sexpr[results=rd, stage=build]{xml2:::describe_options(…)}` in `man/read_xml.Rd`.
+  `R CMD build` copies `man/*.Rd` verbatim; the build→#ifdef→install→render stages are run by the
+  Rd processor at **install/help time**, not by `R CMD build`. So build (and install) Sexpr stay
+  **live in the tarball** → our source↔baked diff can find them. (Had build rewritten the source,
+  they'd be unrecoverable, exactly like the binary.)
+- **The scaffold only has to *locate* a span, not reproduce its value.** When the detector baked
+  `xml2`'s `results=rd` Sexpr via `prepare_Rd` it rendered to **empty**, while the installed
+  `Rd_db` has the full `\describe{…}` options list. Not a problem: the scaffold is
+  `static-anchor + {ISEXPR_0}`, and the anchor (`"…Zero or more of "`) is authored prose, identical
+  regardless of what the Sexpr rendered to. So the scaffold matches the binary and `{ISEXPR_0}`
+  captures **whatever the binary actually has there** at runtime. This also means the production
+  detector can take the baked side straight from the installed `Rd_db` (no `prepare_Rd`, no
+  package evaluation) — which is what `install_with_translation()` does.
+
+### 16.3 `install_with_translation()` (in `rhelpi18n`)
+One call, from just the installed binary:
+```r
+install_with_translation(pkg, language, translate = NULL, lib = .libPaths()[1])
+#  binary DESCRIPTION -> version -> fetch matching CRAN source (current -> Archive)
+#  per topic: parse_Rd(source)  vs  Rd_db(installed)  -> detect_scaffolds() -> {ISEXPR_i}
+#  translate the static text -> build + R CMD INSTALL the `pkg.<language>` module
+```
+Design:
+- The detector moved into `rhelpi18n` (`R/detect-sexpr.R`, `detect_scaffolds(src_rd, baked_rd)`),
+  taking the baked side from the caller — the helper feeds it the installed `Rd_db`, so there is
+  **no `tools:::prepare_Rd` internal and no need to load/evaluate the target package**.
+- `translate` is a pluggable `function(text) -> text`, invoked **only on the literal text between
+  placeholders** (`.translate_scaffold` splits on `{ISEXPR_i}`), so it can never corrupt a token
+  or a render `\Sexpr`'s code sitting inside an anchor. `translate = NULL` → a ready-to-fill
+  template (`translation: ~`); a machine-translation callback → full auto.
+- A topic whose anchors don't align is `tryCatch`-skipped, not fatal.
+
+**Verified end-to-end on `xml2`** (fake `translate = \(s) paste0("[es] ", s)` to make it visible):
+```
+built scaffolds for 31 / 31 topics  ->  installed xml2.es
+read_xml `options`:  "[es] Set parsing options … Zero or more of \describe{\item{RECOVER}…}"
+   translated anchor?  TRUE    live options list captured (RECOVER)?  TRUE    leftover token?  FALSE
+```
+i.e. the runtime translated the prose **and** pulled the real options list out of the installed
+binary into `{ISEXPR_0}`. The static section `title` was translated by the same path (exact-match,
+no tokens).
+
+**Open item — the translation *source*.** The helper automates scaffold generation and module
+build/install; the actual translated text still comes from `translate` (human, MT API, or a
+community translation repo). `translate = NULL` (template) is the honest MVP; wiring a concrete
+backend, and extending source-fetch to non-CRAN (GitHub/Bioconductor), are the next steps.
