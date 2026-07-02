@@ -83,3 +83,25 @@ count_render <- function(rd) { n <- 0
                      if (is.list(x)) for (c in x) w(c) }
   w(rd); n }
 count_render(tools::Rd_db("dplyr")[["arrange.Rd"]])     # 1 — detectable straight from the binary
+
+
+## ---- 8. One-call module creation: install_with_translation() ---------
+# rhelpi18n::install_with_translation() does the whole pipeline for a CRAN
+# package from just the installed binary: fetch matching source -> diff
+# source vs installed Rd_db -> per-topic {ISEXPR_i} scaffolds -> translate
+# static text -> build + install the `pkg.<lang>` module.
+#
+# `translate` is a pluggable function(text)->text; it only sees the literal
+# text BETWEEN placeholders, so it can't corrupt a token. Here we fake it with
+# an "[es] " prefix to make the translation visible end to end.
+mod <- rhelpi18n::install_with_translation(
+  "xml2", "es", translate = function(s) paste0("[es] ", s))
+
+# inspect what the runtime produces for read_xml's `options` argument (the
+# build \Sexpr): translated prose AND the real live options list from the binary
+ns <- asNamespace("rhelpi18n")
+tr   <- get("translations", asNamespace("xml2.es"))[["read_xml"]]
+live <- get("rd_flatten", ns)(tools::Rd_db("xml2")[["read_xml.Rd"]])
+cat(substr(get("translate", ns)(live, tr)$arguments$options, 1, 200), "\n")
+# -> "[es] Set parsing options ... Zero or more of \describe{\item{RECOVER}...}"
+# (translate = NULL instead would install a ready-to-fill template.)
