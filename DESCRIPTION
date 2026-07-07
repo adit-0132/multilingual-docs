@@ -2,8 +2,7 @@ Package: gsocproposal
 Title: Submit Proposals to Google Summer of Code
 Version: 0.1.0
 Authors@R:
-    person("Author", "Name", , "author@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "0000-0000-0000-0000"))
+    person("Aditya", "Bansal", , "aditya2017rks@gmail.com", role = c("aut", "cre"))
 Description: Provides a single function to determine whether a Google Summer
     of Code proposal can still be submitted. The submission deadline is stored
     in a package-level environment variable so that it can be updated without
@@ -12,7 +11,6 @@ Description: Provides a single function to determine whether a Google Summer
     computed at render time using Rd Sexpr macros.
 License: MIT + file LICENSE
 Encoding: UTF-8
-LazyData: true
 RoxygenNote: 7.3.2
 Imports:
     tools

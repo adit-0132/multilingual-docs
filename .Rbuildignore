@@ -1,0 +1,12 @@
+^\.md/
+^.*\.qmd$
+^.*\.html$
+^.*\.pdf$
+^.*\.docx$
+^FINDINGS\.md$
+^rd-tags-visualization\.md$
+^\.github$
+^.*\.Rproj$
+^\.Rproj\.user$
+^\.git$
+^\.gitignore$
