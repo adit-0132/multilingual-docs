@@ -1,21 +1,11 @@
-Package: gsocproposal
-Title: Submit Proposals to Google Summer of Code
+Package: gsocproposal.es
+Type: Translation-module
+Title: Spanish Translation for gsocproposal
 Version: 0.1.0
-Authors@R:
-    person("Author", "Name", , "author@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "0000-0000-0000-0000"))
-Description: Provides a single function to determine whether a Google Summer
-    of Code proposal can still be submitted. The submission deadline is stored
-    in a package-level environment variable so that it can be updated without
-    modifying source documentation. Documentation is generated dynamically: the
-    deadline is resolved at install time and the time-remaining message is
-    computed at render time using Rd Sexpr macros.
-License: MIT + file LICENSE
+Authors@R: person("Aditya", "Bansal", email = "dev@baaz.pro", role = c("aut", "cre"))
+Description: Spanish (es) translation module for the gsocproposal help pages.
+License: GPL-3
+Language: es
+Translates: gsocproposal (== 0.1.0)
+Imports: yaml
 Encoding: UTF-8
-LazyData: true
-RoxygenNote: 7.3.2
-Imports:
-    tools
-Suggests:
-    testthat (>= 3.0.0)
-Config/testthat/edition: 3

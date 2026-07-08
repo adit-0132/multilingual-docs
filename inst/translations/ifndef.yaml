@@ -1,0 +1,12 @@
+title:
+  original: 'Conditional: #ifndef windows'
+  translation: 'Condicional: #ifndef windows'
+description:
+  original: |
+    Text immediately below appears on everything except Windows:
+    {ISEXPR_0}Text after the conditional always appears.
+  translation: |
+    El texto de abajo aparece en todo excepto Windows: {ISEXPR_0}El texto después del condicional siempre aparece.
+  ifdef:
+    '0': |
+      ESTA LÍNEA SE MUESTRA EN UNIX Y MACOS (NO WINDOWS).

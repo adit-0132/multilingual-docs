@@ -1,0 +1,25 @@
+title:
+  original: Greet the mentors
+  translation: Saluda a los mentores
+description:
+  original: |
+    Returns a friendly greeting. This paragraph is plain static prose with no
+    dynamic content, so it should translate cleanly into another language.
+  translation: Devuelve un saludo amistoso. Este párrafo es prosa estática sin contenido
+    dinámico, así que debería traducirse limpiamente a otro idioma.
+details:
+  original: |
+    The current date is \Sexpr[results=text,stage=render]{ format(Sys.Date()) } and
+    this package was here's a change installed at {ISEXPR_0}.
+
+    Because this paragraph embeds Sexpr macros, the translator sees them as text.
+
+    A user macro: Google Summer of Code
+  translation: 'La fecha actual es \Sexpr[results=text,stage=render]{ format(Sys.Date())
+    } y este paquete fue —aquí un cambio— instalado a las {ISEXPR_0}. Como este párrafo
+    incluye macros Sexpr, el traductor las ve como texto. Una macro de usuario: Google
+    Summer of Code.'
+value:
+  original: |
+    A length-one character string containing the greeting.
+  translation: Una cadena de caracteres de longitud uno que contiene el saludo.
