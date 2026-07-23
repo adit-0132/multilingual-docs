@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>rhelpi18n — Translator's Guide</title>
+<style>
+  :root {
+    --bg:#ffffff; --fg:#1c2024; --muted:#5c6570; --line:#e3e8ee;
+    --card:#f7f9fc; --code-bg:#f3f5f9; --code-fg:#1c2024;
+    --accent:#2563eb; --accent-soft:#eff4ff;
+    --ok:#0f9d58; --ok-soft:#eaf7ef;
+    --warn:#c2410c; --warn-soft:#fff2e8;
+    --tip:#7c3aed; --tip-soft:#f5f0ff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#0f1216; --fg:#e6e9ee; --muted:#9aa4b2; --line:#242a33;
+      --card:#161b22; --code-bg:#12161c; --code-fg:#e6e9ee;
+      --accent:#6ea8fe; --accent-soft:#141c2b;
+      --ok:#4ade80; --ok-soft:#10231a;
+      --warn:#fb923c; --warn-soft:#251708;
+      --tip:#c4b5fd; --tip-soft:#1c1730;
+    }
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.65; font-size:16px;
+    max-width:860px; margin:0 auto; padding:56px 24px 96px;
+  }
+  header{border-bottom:1px solid var(--line); padding-bottom:28px; margin-bottom:40px}
+  .eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:10px}
+  h1{font-size:34px;line-height:1.2;letter-spacing:-.02em;margin-bottom:10px}
+  header p{color:var(--muted);font-size:17px}
+  h2{font-size:22px;margin:44px 0 14px;letter-spacing:-.01em;display:flex;align-items:center;gap:12px}
+  h3{font-size:16px;margin:26px 0 8px;color:var(--fg)}
+  .num{
+    flex:0 0 auto;width:30px;height:30px;border-radius:50%;
+    background:var(--accent);color:#fff;font-size:14px;font-weight:600;
+    display:inline-flex;align-items:center;justify-content:center;
+  }
+  p{margin:12px 0}
+  ul,ol{margin:12px 0 12px 22px}
+  li{margin:6px 0}
+  code{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:.88em; background:var(--code-bg); padding:2px 6px; border-radius:4px;
+  }
+  pre{
+    background:var(--code-bg); color:var(--code-fg); border:1px solid var(--line);
+    border-radius:8px; padding:16px 18px; overflow-x:auto; margin:14px 0;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:13.5px; line-height:1.6;
+  }
+  pre code{background:none;padding:0;font-size:inherit}
+  .box{border-left:3px solid var(--accent);background:var(--accent-soft);padding:14px 18px;border-radius:0 8px 8px 0;margin:18px 0;font-size:15px}
+  .box.tip{border-color:var(--tip);background:var(--tip-soft)}
+  .box.warn{border-color:var(--warn);background:var(--warn-soft)}
+  .box.ok{border-color:var(--ok);background:var(--ok-soft)}
+  .box strong{display:block;margin-bottom:4px;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+  .box.tip strong{color:var(--tip)} .box.warn strong{color:var(--warn)}
+  .box.ok strong{color:var(--ok)} .box strong{color:var(--accent)}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
+  .tree{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px 18px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.8;white-space:pre;overflow-x:auto;margin:14px 0}
+  .muted{color:var(--muted)}
+  hr{border:none;border-top:1px solid var(--line);margin:40px 0}
+  footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">rhelpi18n</div>
+  <h1>Translator's Guide</h1>
+  <p>Everything you need to translate an R package's help pages — from installing the tools, to
+     producing a translation module, to publishing it on GitHub so others can install it.</p>
+</header>
+
+<div class="box">
+  <strong>Who this is for</strong>
+  You want to translate the <em>documentation</em> (help pages) of an R package into another
+  language. You don't need to know the package's internals — you only edit text files.
+</div>
+
+<h2><span class="num">1</span> Prerequisites</h2>
+<ul>
+  <li><strong>R 4.4 or newer</strong> — check with <code>R.version.string</code></li>
+  <li><strong>RStudio</strong> (recommended — you'll be editing files and running a few commands)</li>
+  <li><strong>git</strong> + a <strong>GitHub account</strong> (for publishing your translation)</li>
+</ul>
+
+<h2><span class="num">2</span> Install rhelpi18n</h2>
+<p>rhelpi18n is the engine that builds your translation template and, later, renders translated help.</p>
+<pre><code>install.packages("remotes")
+remotes::install_github("adit-0132/rhelpi18n@module-skeleton")</code></pre>
+<div class="box warn">
+  <strong>Note on the branch</strong>
+  Until this work is merged upstream, install from the <code>@module-skeleton</code> branch — that's
+  the one with the skeleton generator. Afterwards it will simply be
+  <code>remotes::install_github("eliocamp/rhelpi18n")</code>.
+</div>
+
+<h2><span class="num">3</span> Get the package <em>source</em></h2>
+<p>You need the package's <strong>source code</strong> (a folder with a <code>DESCRIPTION</code> file and a
+   <code>man/</code> folder of <code>.Rd</code> help files) — not the installed version.</p>
+<pre><code># in a terminal
+git clone https://github.com/someone/theirpkg.git ~/translate/theirpkg</code></pre>
+<p class="muted">Or download and unzip the source tarball from CRAN. Either way, you should end up with a
+   folder containing <code>DESCRIPTION</code> and <code>man/</code>.</p>
+
+<h2><span class="num">4</span> Generate your translation skeleton</h2>
+<p>Pick your language code (<code>es</code>, <code>fr</code>, <code>zh_CN</code>, <code>pt_BR</code>…) and run:</p>
+<pre><code>library(rhelpi18n)
+
+i18n_module_skeleton(
+  package_path = "~/translate/theirpkg",     # the SOURCE folder from step 3
+  language     = "es",                        # your language code
+  module_path  = "~/translate/theirpkg.es"    # where to create your translation
+)</code></pre>
+<div class="box tip">
+  <strong>This takes a minute</strong>
+  It temporarily installs the package in the background so it can see exactly what the help pages
+  look like after installation. That's normal — and the temporary copy is deleted afterwards.
+</div>
+
+<h3>What you get</h3>
+<div class="tree">theirpkg.es/
+  DESCRIPTION            <span class="muted">← says which package + language this translates</span>
+  NAMESPACE
+  R/translation.R        <span class="muted">← machinery; don't touch</span>
+  translations/          <span class="muted">← ★ YOUR WORK GOES HERE — one file per help page</span>
+    hello.yaml
+    goodbye.yaml
+  man_original/          <span class="muted">← copies of the original help files, for reference</span></div>
+
+<h2><span class="num">5</span> Understand a translation file</h2>
+<p>Open <code>translations/hello.yaml</code>. It looks like this:</p>
+<pre><code>title:
+  original: Say hello
+  translation: ~
+description:
+  original: |
+    This package was installed under {ISEXPR_0}.
+    It always says hello.
+  translation: ~</code></pre>
+
+<table>
+  <tr><th>Field</th><th>What it is</th><th>Do you edit it?</th></tr>
+  <tr><td><code>original</code></td><td>The English text, exactly as it appears in the help page</td><td><strong>No</strong> — never change this</td></tr>
+  <tr><td><code>translation</code></td><td><code>~</code> means "empty". Your translation goes here</td><td><strong>Yes</strong> — this is your job</td></tr>
+  <tr><td><code>ifdef</code></td><td>Appears on some pages; one entry per platform-specific block</td><td><strong>Yes</strong> — fill each entry</td></tr>
+</table>
+
+<h2><span class="num">6</span> The one rule: keep the <code>{ISEXPR_…}</code> placeholders</h2>
+<p>Some help text changes every time the package is installed — a version number, a date, a generated
+   table. Those parts are replaced by a placeholder like <code>{ISEXPR_0}</code>.</p>
+<p><strong>Copy each placeholder into your translation, unchanged.</strong> Move it wherever your language
+   needs it, but never translate, renumber, or delete it.</p>
+<pre><code>description:
+  original: |
+    This package was installed under {ISEXPR_0}.
+    It always says hello.
+  translation: |
+    Este paquete se instaló con {ISEXPR_0}.
+    Siempre dice hola.</code></pre>
+<div class="box ok">
+  <strong>Why this matters</strong>
+  The placeholder is filled in with the real, current value when a user opens the help page. Keeping
+  it means your translation keeps working after the package is updated or reinstalled.
+</div>
+
+<h3>Platform-specific blocks (<code>ifdef</code>)</h3>
+<p>Some pages show different text on Windows vs. Mac/Linux. Those look like this — translate each
+   numbered branch:</p>
+<pre><code>description:
+  original: |
+    Text below appears on everything except Windows:
+    {ISEXPR_0}Text after always appears.
+  translation: |
+    El texto de abajo aparece en todo excepto Windows:
+    {ISEXPR_0}El texto posterior siempre aparece.
+  ifdef:
+    '0': ESTA LÍNEA SE MUESTRA EN UNIX Y MACOS (NO WINDOWS).</code></pre>
+
+<div class="box warn">
+  <strong>Rare: literal braces</strong>
+  If the original shows <code>{{ISEXPR_0}}</code> with <em>double</em> braces, that's real text the author
+  wrote — not a placeholder. Keep the double braces as-is in your translation.
+</div>
+
+<h2><span class="num">7</span> Test your translation locally</h2>
+<pre><code># 1. install your translation module
+install.packages("~/translate/theirpkg.es", repos = NULL, type = "source")
+
+# 2. RESTART R  (Session → Restart R, or Ctrl+Shift+F10)
+
+# 3. switch language and open a help page
+library(rhelpi18n)
+library(theirpkg)
+Sys.setenv(LANGUAGE = "es")
+?hello</code></pre>
+<p>The help pane should show your Spanish text, with the real value filled into the placeholder.
+   To compare, set <code>Sys.setenv(LANGUAGE = "en")</code> and open it again.</p>
+<div class="box warn">
+  <strong>Always restart R after installing</strong>
+  If you install a package and open its help in the same session, R may show a stale version.
+  Restart first — it fixes almost every "my change didn't show up" problem.
+</div>
+
+<h2><span class="num">8</span> Publish it on GitHub</h2>
+<p>Your translation module is just a small R package. Put it on GitHub so others can install it.</p>
+<pre><code># in a terminal, from inside your module folder
+cd ~/translate/theirpkg.es
+
+git init
+git add .
+git commit -m "Spanish (es) translation for theirpkg"
+
+# create the repo and push (needs the GitHub CLI)
+gh repo create theirpkg.es --public --source=. --push</code></pre>
+<p class="muted">No GitHub CLI? Create an empty repo on github.com, then:</p>
+<pre><code>git remote add origin https://github.com/YOURNAME/theirpkg.es.git
+git branch -M main
+git push -u origin main</code></pre>
+
+<h2><span class="num">9</span> Tell people how to install it</h2>
+<p>Put this in your repo's README:</p>
+<pre><code>remotes::install_github("adit-0132/rhelpi18n@dynamic-sexpr")  # the engine
+remotes::install_github("YOURNAME/theirpkg.es")               # this translation
+
+# then restart R:
+Sys.setenv(LANGUAGE = "es")
+?hello</code></pre>
+
+<hr />
+
+<h2>Keeping your translation up to date</h2>
+<p>When the package you translated releases a new version, its help text may have changed. Re-run
+   step 4 into a <em>new</em> folder and compare: sections whose <code>original</code> changed need
+   re-translating; the rest you can copy across.</p>
+<div class="box tip">
+  <strong>Why <code>man_original/</code> exists</strong>
+  It stores the exact help files your translation was made from, so you (or a tool) can diff them
+  against a newer version to see precisely what changed.
+</div>
+
+<h2>Troubleshooting</h2>
+<table>
+  <tr><th>Symptom</th><th>Fix</th></tr>
+  <tr><td>Help still shows English</td><td>Restart R. Then check <code>Sys.getenv("LANGUAGE")</code> and that your module is installed.</td></tr>
+  <tr><td>One section is English, others translated</td><td>That section's <code>translation:</code> is still <code>~</code>, or its <code>original</code> no longer matches the installed package (package was updated).</td></tr>
+  <tr><td>Placeholder shows as literal <code>{ISEXPR_0}</code></td><td>The text around it changed. Regenerate the skeleton and re-copy your translation.</td></tr>
+  <tr><td><code>i18n_module_skeleton</code> errors</td><td>Check <code>package_path</code> points at a folder with <code>DESCRIPTION</code> + <code>man/</code>, and that the package installs cleanly on its own.</td></tr>
+</table>
+
+<h2>Language code reference</h2>
+<table>
+  <tr><th>You want</th><th>Use</th><th>Module gets named</th></tr>
+  <tr><td>Spanish</td><td><code>es</code></td><td><code>theirpkg.es</code></td></tr>
+  <tr><td>Brazilian Portuguese</td><td><code>pt_BR</code></td><td><code>theirpkg.pt.BR</code></td></tr>
+  <tr><td>Simplified Chinese</td><td><code>zh_CN</code></td><td><code>theirpkg.zh.CN</code></td></tr>
+  <tr><td>Traditional Chinese</td><td><code>zh_TW</code></td><td><code>theirpkg.zh.TW</code></td></tr>
+</table>
+<div class="box warn">
+  <strong>Use underscores, not hyphens</strong>
+  Write <code>zh_CN</code>, not <code>zh-CN</code>. R's language setting uses underscores, and the match
+  won't be found otherwise. (The package <em>name</em> gets dots automatically — that's expected.)
+</div>
+
+<footer>
+  rhelpi18n — translating R help pages. Questions or problems:
+  open an issue at <code>github.com/eliocamp/rhelpi18n</code>.
+</footer>
+
+</body>
+</html>

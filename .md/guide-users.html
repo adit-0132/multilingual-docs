@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>rhelpi18n — Reading R Help in Your Language</title>
+<style>
+  :root {
+    --bg:#ffffff; --fg:#1c2024; --muted:#5c6570; --line:#e3e8ee;
+    --card:#f7f9fc; --code-bg:#f3f5f9; --code-fg:#1c2024;
+    --accent:#0f9d58; --accent-soft:#eaf7ef;
+    --warn:#c2410c; --warn-soft:#fff2e8;
+    --tip:#2563eb; --tip-soft:#eff4ff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#0f1216; --fg:#e6e9ee; --muted:#9aa4b2; --line:#242a33;
+      --card:#161b22; --code-bg:#12161c; --code-fg:#e6e9ee;
+      --accent:#4ade80; --accent-soft:#10231a;
+      --warn:#fb923c; --warn-soft:#251708;
+      --tip:#6ea8fe; --tip-soft:#141c2b;
+    }
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.65; font-size:16px;
+    max-width:860px; margin:0 auto; padding:56px 24px 96px;
+  }
+  header{border-bottom:1px solid var(--line); padding-bottom:28px; margin-bottom:40px}
+  .eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:10px}
+  h1{font-size:34px;line-height:1.2;letter-spacing:-.02em;margin-bottom:10px}
+  header p{color:var(--muted);font-size:17px}
+  h2{font-size:22px;margin:44px 0 14px;letter-spacing:-.01em;display:flex;align-items:center;gap:12px}
+  h3{font-size:16px;margin:26px 0 8px}
+  .num{
+    flex:0 0 auto;width:30px;height:30px;border-radius:50%;
+    background:var(--accent);color:#062b16;font-size:14px;font-weight:700;
+    display:inline-flex;align-items:center;justify-content:center;
+  }
+  @media (prefers-color-scheme: dark){ .num{color:#062b16} }
+  p{margin:12px 0}
+  ul,ol{margin:12px 0 12px 22px}
+  li{margin:6px 0}
+  code{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:.88em; background:var(--code-bg); padding:2px 6px; border-radius:4px;
+  }
+  pre{
+    background:var(--code-bg); color:var(--code-fg); border:1px solid var(--line);
+    border-radius:8px; padding:16px 18px; overflow-x:auto; margin:14px 0;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:13.5px; line-height:1.6;
+  }
+  pre code{background:none;padding:0;font-size:inherit}
+  .box{border-left:3px solid var(--tip);background:var(--tip-soft);padding:14px 18px;border-radius:0 8px 8px 0;margin:18px 0;font-size:15px}
+  .box.warn{border-color:var(--warn);background:var(--warn-soft)}
+  .box.ok{border-color:var(--accent);background:var(--accent-soft)}
+  .box strong{display:block;margin-bottom:4px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--tip)}
+  .box.warn strong{color:var(--warn)} .box.ok strong{color:var(--accent)}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
+  .muted{color:var(--muted)}
+  hr{border:none;border-top:1px solid var(--line);margin:40px 0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px 22px;margin:18px 0}
+  .card h3{margin-top:0}
+  footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">rhelpi18n</div>
+  <h1>Reading R Help in Your Language</h1>
+  <p>How to set up your R environment so that <code>?function</code> shows help pages in Spanish,
+     Chinese, Portuguese — whatever translation is available.</p>
+</header>
+
+<div class="box">
+  <strong>Who this is for</strong>
+  You use R and would rather read documentation in your own language. Nothing here changes how your
+  code works — only what the help pages look like.
+</div>
+
+<div class="card">
+  <h3>The whole thing in 4 lines</h3>
+<pre><code>remotes::install_github("adit-0132/rhelpi18n@dynamic-sexpr")  # 1. the engine
+remotes::install_github("SOMEONE/theirpkg.es")                # 2. a translation
+# 3. RESTART R
+Sys.setenv(LANGUAGE = "es"); library(rhelpi18n); ?hello       # 4. read it</code></pre>
+  <p class="muted">The rest of this page explains each step and what to do when something doesn't work.</p>
+</div>
+
+<h2><span class="num">1</span> Install the engine</h2>
+<p><strong>rhelpi18n</strong> is what makes R look for a translation whenever you open a help page.
+   You install it once.</p>
+<pre><code>install.packages("remotes")
+remotes::install_github("adit-0132/rhelpi18n@dynamic-sexpr")</code></pre>
+<div class="box warn">
+  <strong>Note on the branch</strong>
+  Until this work is merged upstream, install from the <code>@dynamic-sexpr</code> branch.
+  Afterwards it will simply be <code>remotes::install_github("eliocamp/rhelpi18n")</code>.
+</div>
+
+<h2><span class="num">2</span> Install the package you want help for</h2>
+<p>Nothing special — install it however you normally would.</p>
+<pre><code>install.packages("theirpkg")                       # from CRAN
+# or
+remotes::install_github("someone/theirpkg")        # from GitHub</code></pre>
+
+<h2><span class="num">3</span> Install a translation</h2>
+<p>Translations ship as their own small packages, usually named <code>&lt;package&gt;.&lt;language&gt;</code>.
+   Install one the same way:</p>
+<pre><code>remotes::install_github("SOMEONE/theirpkg.es")     # Spanish translation</code></pre>
+<p>You can install as many as you like — one per language, or for several different packages. They
+   don't conflict.</p>
+<div class="box">
+  <strong>Where do translations come from?</strong>
+  They're written and published by translators (often the community). If none exists for your
+  package and language yet, you'll simply keep seeing English — nothing breaks.
+</div>
+
+<h2><span class="num">4</span> Choose your language</h2>
+<p>R uses an environment variable called <code>LANGUAGE</code>.</p>
+
+<h3>For this session only</h3>
+<pre><code>Sys.setenv(LANGUAGE = "es")</code></pre>
+
+<h3>Permanently (recommended)</h3>
+<p>Add one line to your <code>~/.Renviron</code> file so it applies every time you start R:</p>
+<pre><code># open the file (creates it if needed)
+usethis::edit_r_environ()
+
+# add this line, save, and restart R:
+LANGUAGE=es</code></pre>
+<p class="muted">No <code>usethis</code>? Just create/edit <code>~/.Renviron</code> in any text editor.</p>
+
+<table>
+  <tr><th>Language</th><th>Set <code>LANGUAGE</code> to</th></tr>
+  <tr><td>Spanish</td><td><code>es</code></td></tr>
+  <tr><td>French</td><td><code>fr</code></td></tr>
+  <tr><td>Brazilian Portuguese</td><td><code>pt_BR</code></td></tr>
+  <tr><td>Simplified Chinese</td><td><code>zh_CN</code></td></tr>
+  <tr><td>Traditional Chinese</td><td><code>zh_TW</code></td></tr>
+  <tr><td>Back to English</td><td><code>en</code></td></tr>
+</table>
+<div class="box warn">
+  <strong>Underscores, not hyphens</strong>
+  Write <code>zh_CN</code>, not <code>zh-CN</code>. And be specific where it matters: <code>zh_CN</code>
+  (Simplified) and <code>zh_TW</code> (Traditional) are treated as different languages — a bare
+  <code>zh</code> may pick either one.
+</div>
+
+<h2><span class="num">5</span> Restart R, then read the help</h2>
+<pre><code># Session → Restart R   (or Ctrl+Shift+F10 in RStudio)
+
+library(rhelpi18n)
+library(theirpkg)
+?hello</code></pre>
+<p>The help pane now shows the translated page. Anything that's version- or date-specific still shows
+   the real, current value — translations don't freeze those.</p>
+<div class="box ok">
+  <strong>Sections without a translation stay in English</strong>
+  If a translator has only done part of a page, you'll see translated sections mixed with English
+  ones. That's intentional — you always get correct information, never a stale one.
+</div>
+
+<h2><span class="num">6</span> Switching languages</h2>
+<pre><code>Sys.setenv(LANGUAGE = "fr"); ?hello   # French
+Sys.setenv(LANGUAGE = "en"); ?hello   # original English</code></pre>
+<p>You don't need to reinstall anything to switch — just change the variable. (If a page seems stuck,
+   restart R.)</p>
+
+<hr />
+
+<h2>Troubleshooting</h2>
+<table>
+  <tr><th>Symptom</th><th>What to check</th></tr>
+  <tr><td>Help is still in English</td>
+      <td>Did you <strong>restart R</strong> after installing? Then check <code>Sys.getenv("LANGUAGE")</code>
+          returns your code, and that <code>library(rhelpi18n)</code> is loaded.</td></tr>
+  <tr><td>Some sections translated, some not</td>
+      <td>Normal — that translation is incomplete, or the package was updated since it was written.</td></tr>
+  <tr><td>Whole page reverted to English after updating the package</td>
+      <td>The translation was written for the older version. Check for an updated translation, or let
+          the translator know.</td></tr>
+  <tr><td>Nothing happens at all</td>
+      <td>Confirm the translation module is installed:
+          <code>"theirpkg.es" %in% rownames(installed.packages())</code></td></tr>
+</table>
+
+<h3>Check what translations you have</h3>
+<pre><code>ip &lt;- installed.packages(fields = c("Translates", "Language"))
+ip[!is.na(ip[, "Translates"]), c("Package", "Translates", "Language")]</code></pre>
+<p class="muted">This lists every translation module installed, which package it translates, and its language.</p>
+
+<h2>How it works (the short version)</h2>
+<p>When you open a help page, rhelpi18n:</p>
+<ol>
+  <li>notices which package the page belongs to and what <code>LANGUAGE</code> you've set;</li>
+  <li>looks through your installed packages for a translation module declaring that package and language;</li>
+  <li>swaps the translated text in — while re-inserting any live values (dates, versions, generated
+      tables) from your actual installation.</li>
+</ol>
+<p>That last point is the important one: a translation stays correct even after you reinstall or
+   update the package, because the changing parts are filled in fresh each time.</p>
+
+<footer>
+  rhelpi18n — R help pages in your language. Issues and questions:
+  <code>github.com/eliocamp/rhelpi18n</code>.
+</footer>
+
+</body>
+</html>
