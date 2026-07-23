@@ -32,3 +32,8 @@ auto/
 *.out
 *.toc
 *.synctex.gz
+
+# keep the published guides (GitHub Pages); other *.html stay ignored
+!/guide-translators.html
+!/guide-users.html
+!/index.html
