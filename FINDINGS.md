@@ -924,3 +924,106 @@ no tokens).
 build/install; the actual translated text still comes from `translate` (human, MT API, or a
 community translation repo). `translate = NULL` (template) is the honest MVP; wiring a concrete
 backend, and extending source-fetch to non-CRAN (GitHub/Bioconductor), are the next steps.
+
+## 17. Weekly log — review response, PR split, Part-1 hardening, Part-2 skeleton
+
+Chronological log of everything since §16, keyed to commit history across the two repos
+(`(rh)` = `adit-0132/rhelpi18n`, `(md)` = this repo). PR #35 = `adit-0132:dynamic-sexpr →
+eliocamp/rhelpi18n`.
+
+### 17.1 Week of 2026-06-30 — Elio's review and the two-concern framing
+- **`\arguments` support** `(md 8be6125)`: real CRAN build/install `\Sexpr` usually sit inside
+  `\arguments \item{}{}`; the detector now emits per-`\item` scaffolds. Harness **108/108**.
+  Demo scripts `(md 4bfb3fa, 9e5ec51)`, FINDINGS §16 `(md 25630f5)`.
+- **Elio's inline review (2026-07-03)** on PR #35: use base `%||%` not a local `.def`; a locale
+  like `en-GB` makes an invalid package name; `match_and_fill` should return `live` (not `NULL`)
+  so the caller needs no guard; drop a redundant `!is.null(trans)` check; readability (name the
+  dense `\Sexpr`/`#ifdef` predicate). Plus the CRAN comment: don't assume CRAN / hardcode the
+  mirror — *"point to the source code, install the package in a temporary library (like
+  `devtools::build_readme()`), extract what we need, then remove the temporary library."*
+- **Elio's conversation comment (2026-07-05)** reframed the PR as **two independent concerns**:
+  (1) `match_and_fill` placeholder substitution — *"looks pretty good"*; (2)
+  `install_with_translation` — building the stored strings — *table it until Part 1 is solid*.
+  Raised **N1** (a doc change *adjacent to a placeholder* is silently swallowed → wrong
+  translation, should fail safe) and **N2** (docs may contain a literal `{ISEXPR_0}` → need an
+  escape). The custom `translate` callback "feels out of scope."
+
+### 17.2 Week of 2026-07-07 — review fixes, the Part-1/Part-2 split, packaging
+- **Applied the five review fixes** `(rh)`: `%||%` + self-documenting predicates in the detector
+  `(8cace04)`; `en-GB` module-name sanitiser `(0a1dbdd)`; `match_and_fill` returns `live` on
+  no-match, caller simplified `(ea55b0b)`.
+- **Split PR #35 into Part 1 / Part 2.** Extracted the 4 Part-2 commits (span detector +
+  `install_with_translation`) onto a stacked `install-with-translation` branch and rewrote
+  `dynamic-sexpr` to A-only (placeholder runtime + flatten fixes). Files are disjoint — A:
+  `rd-translate.R`/`rd-flatten.R`; B: `detect-sexpr.R`/`install-with-translation.R` — so the split
+  reproduced the original tree exactly.
+- **Clarified detector ≠ Part 1.** The span *detector* is authoring (needs source, *produces* the
+  stored scaffold) → Part 2. `match_and_fill` (runtime) *consumes* a scaffold, needs no source,
+  and never calls the detector — it works with any scaffold, even hand-written. So the detector
+  ships with `install_with_translation`, not with the runtime.
+- **Packaged `gsocproposal` for release** `(md)`: `publish` branch = clean buildable package
+  (research artifacts stripped, author/`.Rbuildignore` fixed) `(02a80e3, 23ff48d)`; `spanish`
+  branch = the `gsocproposal.es` module `(02d98cc)`; the process PDF tracked on `main` only
+  `(3cda248)`. Set up an r-universe registry (`packages.json` → `gsocproposal @ publish`).
+  **Gotcha:** the registry repo must be named `<account>.r-universe.dev` (matching the GitHub
+  account); a repo named `adi.r-universe.dev` under `adit-0132` yields *"no packages found for
+  owner adi"* — renamed to `adit-0132.r-universe.dev`.
+- Pipeline diagram (`rhelpi18n_pipeline.html`).
+
+### 17.3 Week of 2026-07-14 — N2 escaping, richer return, the first package tests
+- **N1/N2 analysis.** N1: a *single* insertion adjacent to a placeholder is **fundamentally
+  undetectable at runtime** — the new prose is captured as placeholder content, indistinguishable
+  from a dynamic value without the source. The **version pin** is the only clean guard; a runtime
+  *anchor-in-value* heuristic (reject a fill whose captured value contains a scaffold anchor)
+  catches the multiplicity case (Elio's example) and fails safe, but the distance metric can't see
+  pure absorption (the match reports `valid`). N2: ordinary prose `{ISEXPR_0}` needs **no
+  escaping** — Rd treats `{}` as grouping, so prose braces are stripped on flatten; only
+  `\{ISEXPR_0\}` emits a literal that collides.
+- **N2 escape landed** `(rh 0e14b70)`: a literal is authored `{{ISEXPR_n}}`, hidden behind
+  sentinels before token matching and restored as a single-brace literal in the output. Proof +
+  string tests `(md 724770e, 30fe81d)`.
+- **`match_and_fill` return enriched.** Added an opt-in `details` list `(rh 03304bd)`, then made
+  it unconditional `(rh 26d27ee)`: always `list(text, reason, distance)` — `reason ∈ {valid,
+  stale, untranslated}`, `distance = 0 | coarse Levenshtein | Inf` (untranslated) for numeric
+  comparison. Callers read `$text`; the rest is forward-looking metadata for a soft-fallback gate.
+- **First tests for the package.** rhelpi18n had none; added a **testit** suite `(rh 9b5f065)`:
+  `test-match_and_fill`, `test-escaping`, `test-flatten`.
+
+### 17.4 Week of 2026-07-21 — the Part-2 skeleton tool and language variants
+- **Part-2 branch reorg** `(rh)`: parked the over-reaching `install_with_translation` (CRAN fetch,
+  module *install*, hand-rolled skeleton) on `install-with-translation-cran` for the later
+  "no local source" task; cleaned `install-with-translation` down to just the reusable detector
+  `(5e67cdb)`.
+- **`i18n_module_skeleton()`** `(rh c56c269)`: a sibling of `i18n_module_create` that emits
+  **scaffolds** as the `original` strings. Takes a **local source package**; obtains the baked Rd
+  by installing that source into a **throwaway library** (Option B, per Elio) and reading its
+  `Rd_db`; diffs source↔baked → `{ISEXPR_i}`. Reuses `copy_pkg_template` + `modify_description`;
+  produces an **editable module directory** (no install, no CRAN, no `translate`). `\arguments`
+  recurse per item; `#ifdef` sections get a blank `ifdef` side-table. Verified on `gsocproposal`
+  (15 topics; the generated module installs and loads all topics with scaffolds intact).
+  - **B over A** (temp-lib install vs `prepare_Rd` in-memory): higher fidelity (`Rd_db` *is* the
+    real baked help), public API (no `tools:::`), correct `\Sexpr` evaluation context, faithful
+    whole pipeline, works for arbitrary packages, and matches Elio's explicit suggestion. Cost: a
+    full install per generation.
+- **Discovery mechanics.** A module is found by `get_translation_modules()` scanning
+  `installed.packages()` for the `Language` + `Translates` **DESCRIPTION fields** (not by name);
+  the `.es` suffix is pure convention. Fires at `?topic` (via the `.getHelpFile` shim), not at
+  `library()`.
+- **Language variants** (`zh_CN` / `zh_TW`): the package *name* is sanitised (`zh_CN → pkg.zh.CN`,
+  no underscore) but the `Language:` field keeps the real tag. `resolve_lang` is **exact-match
+  first**, so `zh_CN` and `zh_TW` stay distinct; a bare `zh` root-matches both (the shim then
+  takes the first). The `Language:` separator must be **underscore** to match R's `LANGUAGE` env.
+  Added `test-resolve-lang`.
+
+### 17.5 Current branch topology (rhelpi18n)
+- `dynamic-sexpr` — **Part 1 / PR #35**: placeholder runtime (`match_and_fill` with escaping +
+  `list(text, reason, distance)`), flatten fixes, `#ifdef` translation, and the **testit** suite.
+- `install-with-translation` — the reusable span **detector** only (reserved for future
+  `install_with_translation` = the no-local-source / fetch-from-CRAN case).
+- `install-with-translation-cran` — parked over-reaching `install_with_translation` (CRAN fetch +
+  install), kept for that future task.
+- `module-skeleton` — **Part 2 (current)**: `i18n_module_skeleton()` (local source → scaffold).
+
+**Open / next:** enforce the `Translates (== x.y.z)` version pin at runtime (the N1 primary
+guard); rebase `module-skeleton` onto the finalised `dynamic-sexpr`; reply to Elio confirming the
+Part-1/Part-2 split; fold the scaffolded skeleton path back toward `i18n_module_create`.
