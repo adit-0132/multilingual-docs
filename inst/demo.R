@@ -72,7 +72,7 @@ det$scaffold                             # "...Zero or more of {ISEXPR_0}"
 
 # the scaffold matches the INSTALLED binary, so the runtime captures the real value:
 live <- rhelpi18n:::rd_flatten(tools::Rd_db("xml2")[["read_xml.Rd"]])$arguments$options$original
-identical(rhelpi18n:::match_and_fill(live, det$scaffold, det$scaffold), live)   # TRUE
+identical(rhelpi18n:::match_and_fill(live, det$scaffold, det$scaffold)$text, live)   # TRUE
 
 
 ## ---- 7. Render stage from the BINARY ALONE (no source) --------------

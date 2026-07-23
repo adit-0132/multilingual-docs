@@ -31,7 +31,7 @@ cases <- list(
 
 pass <- 0L
 for (c in cases) {
-  got <- mf(c$live, c$stored, c$translation, c$ifdef)
+  got <- mf(c$live, c$stored, c$translation, c$ifdef)$text
   ok  <- identical(got, c$expect)
   pass <- pass + ok
   cat(if (ok) "PASS  " else "FAIL  ", c$name, "\n", sep = "")
@@ -39,10 +39,10 @@ for (c in cases) {
 }
 cat(sprintf("\n%d / %d passed\n", pass, length(cases)))
 
-# --- optional: details = TRUE returns list(text, reason, distance) ------------
+# --- match_and_fill always returns list(text, reason, distance) ---------------
 # reason: "valid" | "stale" | "untranslated". distance: 0 for valid, coarse drift
-# for stale, NA otherwise. Nothing reads these yet; forward-looking metadata.
-cat("\ndetails = TRUE -> list(text, reason, distance):\n")
+# for stale, Inf otherwise. Nothing reads these yet; forward-looking metadata.
+cat("\nlist(text, reason, distance):\n")
 dcases <- list(
   list("valid",        "on Monday",      "on {ISEXPR_0}",     "el {ISEXPR_0}",     "valid"),
   list("stale",        "put at Tuesday", "put on {ISEXPR_0}",  "puesto {ISEXPR_0}", "stale"),
@@ -50,7 +50,7 @@ dcases <- list(
 )
 dpass <- 0L
 for (x in dcases) {
-  r  <- mf(x[[2]], x[[3]], x[[4]], details = TRUE)
+  r  <- mf(x[[2]], x[[3]], x[[4]])
   ok <- identical(r$reason, x[[5]])
   dpass <- dpass + ok
   cat(if (ok) "PASS  " else "FAIL  ", "reason=", r$reason,

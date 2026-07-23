@@ -42,7 +42,7 @@ check_topic <- function(topic) {
                                             ok = ok, note = note, stringsAsFactors = FALSE)
   for (sec in names(L)) {
     r  <- L[[sec]]
-    rt <- tryCatch(match_and_fill(r$original, r$scaffold, r$scaffold),
+    rt <- tryCatch(match_and_fill(r$original, r$scaffold, r$scaffold)$text,
                    error = function(e) paste("ERR:", conditionMessage(e)))
     add(sec, "roundtrip",  identical(rt, r$original),
         if (identical(rt, r$original)) "" else "refilled scaffold != original")

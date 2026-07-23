@@ -21,7 +21,7 @@ cat("2. escaped \\{ISEXPR_0\\} ->", flatten("Here: \\{ISEXPR_0\\}."), "\n")
 
 # 3. Left raw in a scaffold, that literal is mis-read as a placeholder
 #    -- the "X" from `live` is captured instead of the literal staying put:
-cat("3. raw     {ISEXPR_0}   ->", fill("Here: X.", "Here: {ISEXPR_0}.", "Aqui: {ISEXPR_0}."), "\n")
+cat("3. raw     {ISEXPR_0}   ->", fill("Here: X.", "Here: {ISEXPR_0}.", "Aqui: {ISEXPR_0}.")$text, "\n")
 
 # 4. Doubling the braces escapes it -> preserved as a literal, never filled:
-cat("4. escaped {{ISEXPR_0}} ->", fill("Here: {ISEXPR_0}.", "Here: {{ISEXPR_0}}.", "Aqui: {{ISEXPR_0}}."), "\n")
+cat("4. escaped {{ISEXPR_0}} ->", fill("Here: {ISEXPR_0}.", "Here: {{ISEXPR_0}}.", "Aqui: {{ISEXPR_0}}.")$text, "\n")
