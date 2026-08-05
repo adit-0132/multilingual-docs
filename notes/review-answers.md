@@ -73,16 +73,17 @@ ambiguity.
 
 ## 5. `Sys.setlanguage()` instead of `Sys.setenv(LANGUAGE=)`? (Heather)
 
-**There is no such base-R function.** `exists("Sys.setlanguage")` is `FALSE`;
-`Sys.setLanguage` (capital L) exists only as **`tcltk::Sys.setLanguage`**, which
-sets the Tcl/Tk locale, not R's help/UI language. Base R has no help-language
-setter — the idiomatic mechanism is the `LANGUAGE` environment variable, which
-is exactly what rhelpi18n reads.
+**Base R already provides it.** The lowercase `Sys.setlanguage()` does not exist,
+but **`Sys.setLanguage()`** (capital L, base R since 4.2.0, exported) does: it is
+a guarded wrapper around `Sys.setenv(LANGUAGE = lang)` that also returns the
+previous value (so `on.exit(Sys.setLanguage(old))` works). It is the idiomatic
+way to set the help language, and the vignettes now use it — no custom helper is
+needed.
 
-**Recommendation (deferred):** add a small convenience helper, e.g.
-`i18n_set_language("es")` (wrapping `Sys.setenv(LANGUAGE = ...)`) plus a getter,
-so users have a discoverable API. Would need to be created; base R offers
-nothing to reuse.
+*Caveat:* `Sys.setLanguage()` early-returns without setting `LANGUAGE` when
+`capabilities("NLS")` is `FALSE` or the locale is `C`/`POSIX`. rhelpi18n's help
+translation reads only the `LANGUAGE` variable and needs no NLS, so in those
+environments `Sys.setenv(LANGUAGE = ...)` still works as a direct fallback.
 
 ---
 
