@@ -1,0 +1,87 @@
+# The proposal
+
+## Overview
+
+babelrd is a separate package. rdlocal stays free of API keys and network calls, as agreed in [sprint #10](https://github.com/r-devel/r-project-sprint-2026/issues/10). babelrd works on the module files that `rdlocal::i18n_module_create()` already produces:
+
+```
+package help ─ i18n_module_create() ─► module (YAML, empty translations)
+                                            │
+  babelrd::draft()    DeepL / Microsoft / Google / LLM (user's own key)
+                      markup + placeholders protected, glossary applied,
+                      every string written as fuzzy + provenance
+                                            │
+  babelrd::check()    re-parse, placeholder count, render, glossary
+                                            │
+  review in YAML  ◄─────────────────────────┴──► babelrd::to_po() / from_po()
+                                                  Weblate or any PO editor
+                                            │
+  publish: the module is installed and served by rdlocal as today
+```
+
+Sketch of the intended API:
+
+```r
+rdlocal::i18n_module_create("MASS.es", language = "es",
+                            module_path = "MASS.es", package_path = "MASS")
+babelrd::estimate("MASS.es")                     # characters, cost vs free tiers
+babelrd::draft("MASS.es", provider = "deepl")    # key from DEEPL_API_KEY
+babelrd::check("MASS.es")                        # per-page report
+babelrd::to_po("MASS.es", "MASS-es.po")          # upload to Weblate
+babelrd::from_po("MASS.es", "MASS-es.po")        # reviewed strings back in
+```
+
+## Detail
+
+### Minimum Viable Product
+
+`draft()` and `check()` with one provider (DeepL). They take an empty rdlocal module and produce a fully drafted module. Every page must pass the checks, and every drafted string is flagged `fuzzy`, so rdlocal already shows it with a note that the text is unreviewed. `draft()` only fills empty translations; it never overwrites human work.
+
+### Architecture
+
+1. **Protect.** Each string is parsed into prose and protected spans:
+   - `\code{}`, `\link` targets, `\eqn`, `{ISEXPR_n}`, user macros and similar become opaque tokens;
+   - link text and `\emph{}` stay translatable.
+
+   For DeepL and Microsoft the tokens are sent as XML/HTML tags marked "do not translate". For LLMs, [ellmer](https://ellmer.tidyverse.org/) with structured output is used, which also allows local models via Ollama.
+2. **Translate** in batches per help page, so terms stay consistent within a page. Glossary terms from [r-devel/glossary](https://github.com/r-devel/glossary) are passed as a DeepL glossary or as prompt constraints.
+3. **Restore and check.**
+   - Each placeholder must appear exactly once.
+   - The string must re-parse as Rd.
+   - The page must render with `tools::Rd2txt()`.
+   - Glossary terms must be used.
+
+   Strings that fail are left empty (never broken) and listed in the report.
+4. **Record provenance.** Each drafted string gets `fuzzy: yes` and `machine: <provider> <date>` (additive YAML fields).
+5. **PO bridge.**
+   - One PO entry per string, with `msgctxt` = topic + section + argument, so entries map back to YAML.
+   - `fuzzy` ⇄ gettext `#, fuzzy` (Weblate's "needs editing").
+   - Placeholders are declared with Weblate's `placeholders:` check flag, so translators can't drop them.
+   - `from_po()` writes only strings whose `msgid` still equals the module's `original`. Anything else is reported, so a stale PO can never overwrite newer text.
+
+### Assumptions
+
+- **Module schema:** the YAML schema in rdlocal stays stable, or changes additively. I work with its maintainer, and I wrote the current version.
+- **Machine translation quality:** drafts are good enough that reviewing is faster than translating. Bulk machine translation tried on R's Weblate let a translator progress faster, but drafts "sometimes got the meaning completely wrong" ([r-dev-day #66](https://github.com/r-devel/r-dev-day/issues/66)). For that reason nothing is ever marked reviewed automatically. Milestone 4 measures the edit rate.
+- **CRAN:** rdlocal is on r-universe only (it patches `utils:::.getHelpFile`). babelrd will also be distributed through r-universe. It uses rdlocal only for module I/O, so it can move to CRAN together with rdlocal.
+
+### External dependencies
+
+- rdlocal
+- yaml
+- httr2 (DeepL, Microsoft and Google APIs)
+- ellmer (LLMs, optional)
+- r-devel/glossary data (optional)
+- a PO parser: written in-package, since the format needed is small
+- users' own API keys: nothing is hosted or paid for by the project
+
+Weblate hosting of help-page components is not required for any deliverable. The PO files work with any gettext tool, such as Poedit.
+
+### Failure modes and recovery
+
+| Risk | Recovery |
+|---|---|
+| A provider mangles tokens | Per-string retry with a stricter mode. If it still fails, leave the string empty and report it. The page falls back to English, as rdlocal already does. |
+| Output quality is poor for a language | Drafts stay `fuzzy`. The M4 edit-rate data is published, so teams can choose their provider. |
+| A provider changes its API or terms | Backends sit behind a single small function each. There are at least two MT backends plus LLMs. |
+| Weblate admins don't want help-page components yet | PO round-trip still works locally. Hosting becomes future work. |

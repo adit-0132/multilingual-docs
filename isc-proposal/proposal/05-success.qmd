@@ -1,0 +1,25 @@
+# Success
+
+## Definition of done
+
+- babelrd is available from r-universe, and R CMD check passes on Linux, macOS and Windows.
+- For the test modules, every drafted page passes `check()`: placeholders intact, the page re-parses and renders.
+- A module goes YAML → PO → YAML with no change except the reviewed strings. This is covered by tests.
+- A full Spanish draft of one recommended package has been published as an rdlocal module, with a public review report.
+- There are two vignettes (translators; translation teams / Weblate) and the R Consortium blog posts.
+
+## Measuring success
+
+- **During the project:** milestone dates are met, and CI stays green.
+- **Draft quality:** the share of strings that pass `check()` on the first try (target: over 95%).
+- **Pilot:** the edit rate from community review, published per provider, which tells teams whether drafts actually save time.
+- **Adoption, within 6 months of the end:**
+  - new translation modules started with babelrd;
+  - at least one translation team using the PO route;
+  - issues and PRs from people other than me.
+
+## Future work
+
+- Hosting help-page components for base and recommended packages on R's Weblate, if the admins and language teams want it.
+- Drafting translations of vignettes by combining babelrd with babeldown (rdlocal issue [#5](https://github.com/eliocamp/rdlocal/issues/5)).
+- A hook in R's help system so that rdlocal, and therefore babelrd modules, can go to CRAN ([sprint #16](https://github.com/r-devel/r-project-sprint-2026/issues/16)).

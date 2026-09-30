@@ -1,0 +1,22 @@
+# Signatories
+
+## Project team
+
+**Aditya Bansal** (GitHub [\@adit-0132](https://github.com/adit-0132)) will do all development. As the GSoC 2026 contributor on *Multilingual Documentation of R Packages*, I wrote the parts of rdlocal that babelrd builds on. All are merged upstream:
+
+- dynamic `\Sexpr` / `#ifdef` placeholders ([#35](https://github.com/eliocamp/rdlocal/pull/35))
+- the translation-module skeleton generator `i18n_module_create()` ([#36](https://github.com/eliocamp/rdlocal/pull/36))
+- `i18n_module_update()`, which re-syncs a module after a package update and flags changed strings as `fuzzy`
+- the rename to rdlocal ([#37](https://github.com/eliocamp/rdlocal/pull/37))
+
+Write-up: <https://adityabansal.dev/gsoc>.
+
+## Contributors
+
+<!-- CONFIRM BEFORE SUBMITTING: keep only people who have said yes. Delete this block otherwise. -->
+- **Elio Campitelli**: rdlocal author and maintainer, lead of the R Consortium Multilingual Documentation Working Group, GSoC 2026 co-mentor.
+- **Heather Turner**: GSoC 2026 co-mentor. Opened the R Project Sprint 2026 task on sharing translations between rdlocal and Weblate ([sprint #17](https://github.com/r-devel/r-project-sprint-2026/issues/17)).
+
+## Consulted
+
+The idea was posted for discussion at the R Project Sprint 2026 ([sprint #10](https://github.com/r-devel/r-project-sprint-2026/issues/10)). The design below follows the feedback there, in particular Paola Corrales's point that machine translation should speed up *shared, community* translation rather than per-user, one-off translation.

@@ -1,0 +1,43 @@
+# Project plan
+
+## Start-up phase
+
+- The public repository `babelrd` is set up (GitHub, r-universe), with CI running R CMD check on Linux, macOS and Windows.
+- **License:** MIT for the package. Drafted translations inherit the module's license, following the rdlocal module license work ([rdlocal #50](https://github.com/eliocamp/rdlocal/issues/50)).
+- **Reporting:**
+  - A public milestone board on GitHub.
+  - A short progress note at each milestone, posted to the ISC and the rdlocal issue tracker.
+  - Design questions that affect rdlocal (the YAML fields, where the PO functions live) are agreed with its maintainer before implementation.
+
+## Technical delivery
+
+Start: December 2026, after contract signature.
+
+| # | Milestone | Deliverable | Target date |
+|---|---|---|---|
+| M1 | Safe draft engine | `draft()`, `check()` and `estimate()` with the DeepL backend; token protection for Rd markup and placeholders; `fuzzy` + provenance fields; tests on the modules of 5 CRAN packages that use `\Sexpr` and user macros | 2027-02-15 |
+| M2 | PO / Weblate bridge | `to_po()` / `from_po()` with `msgctxt`, fuzzy mapping, stale-entry protection and Weblate placeholder flags; round-trip tests; guide to importing a module into Weblate | 2027-04-15 |
+| M3 | Glossary + providers | r-devel/glossary integration; Microsoft and Google backends; LLM backend via ellmer (incl. local Ollama) | 2027-05-31 |
+| M4 | Pilot + documentation | Full Spanish draft of one recommended package (e.g. MASS). Community reviewers check a sample of 20 topics, and the edit rate per provider is published. Vignettes for translators and teams. | 2027-06-30 |
+
+## Other aspects
+
+- All code will be public on GitHub under MIT, with issues open for contributions.
+- **Outreach:**
+  - an announcement post and a delivery post on the R Consortium blog, with a short update at each milestone;
+  - posts in the Multilingual Documentation WG and on the R Contributors Slack translation channel;
+  - Mastodon/Bluesky;
+  - a talk or lightning talk submission to useR! 2027 or LatinR 2027.
+- The pilot module will be offered to the Spanish rdlocal/LatinR community as a real test case.
+
+## Budget & funding plan
+
+All labor, at $40/h. No hardware, travel or hosting. API usage is paid by users with their own keys, and the pilot fits within DeepL's free tier. The milestones are ordered by priority: **M1 alone** gives translators a safe draft tool, and **M1 + M2** give the full draft → review loop.
+
+| Milestone | Hours | Amount (USD) |
+|---|---:|---:|
+| M1 Safe draft engine | 50 | 2,000 |
+| M2 PO / Weblate bridge | 40 | 1,600 |
+| M3 Glossary + providers | 30 | 1,200 |
+| M4 Pilot + documentation | 20 | 800 |
+| **Total** | **140** | **5,600** |

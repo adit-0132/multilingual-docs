@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="quarto-1.8.26" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+
+<meta name="author" content="Aditya Bansal" />
+<meta name="dcterms.date" content="2026-09-30" />
+
+<title>babelrd: machine-drafted, human-reviewed translations of R help pages</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+<!-- htmldependencies:E3FAD763 -->
+
+
+</head>
+
+<body>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">babelrd: machine-drafted, human-reviewed translations of R help pages</h1>
+<p class="subtitle lead">An rdlocal companion package with a Weblate bridge</p>
+</div>
+
+
+<div class="quarto-title-meta-author">
+  <div class="quarto-title-meta-heading">Author</div>
+  <div class="quarto-title-meta-heading">Affiliation</div>
+  
+    <div class="quarto-title-meta-contents">
+    <p class="author">Aditya Bansal </p>
+  </div>
+  <div class="quarto-title-meta-contents">
+        <p class="affiliation">
+            Indian Institute of Technology Madras (BS Data Science); GSoC 2026 contributor, R Project
+          </p>
+      </div>
+  </div>
+
+<div class="quarto-title-meta">
+
+      
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">2026-09-30</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="executive-summary" class="level1">
+<h1>Executive Summary</h1>
+<p><a href="https://github.com/eliocamp/rdlocal">rdlocal</a> (formerly rhelpi18n, ISC grant 2023-2) lets R users read package help pages in their own language by installing a translation module. After Google Summer of Code 2026 it handles dynamic content and package updates, and it was user-tested at the R Project Sprint 2026. The remaining bottleneck is producing translations: every string is written by hand in YAML files, and the help for <code>base</code> alone is about 1.1 million characters.</p>
+<p>I propose <strong>babelrd</strong>, a companion package that fills a translation module with a machine-translated <em>first draft</em> using the user’s own DeepL, Microsoft, Google or LLM key. It protects Rd markup and rdlocal placeholders, and it checks that every page still parses and renders. Every drafted string is marked <code>fuzzy</code> so readers and reviewers know it is unreviewed. A two-way bridge between modules and gettext PO files lets translation teams review drafts in Weblate, the platform R already uses for its messages. The output is one shared, reviewable module per package and language, not a private translation that each user pays for again.</p>
+<p>The request is <strong>$5,600</strong> (140 hours at $40/h) over about seven months, in four milestones ordered so that partial funding still delivers a working draft → review loop.</p>
+</section>
+<section id="signatories" class="level1">
+<h1>Signatories</h1>
+<section id="project-team" class="level2">
+<h2>Project team</h2>
+<p><strong>Aditya Bansal</strong> (GitHub <a href="https://github.com/adit-0132">@adit-0132</a>) will do all development. As the GSoC 2026 contributor on <em>Multilingual Documentation of R Packages</em>, I wrote the parts of rdlocal that babelrd builds on. All are merged upstream:</p>
+<ul>
+<li>dynamic <code>\Sexpr</code> / <code>#ifdef</code> placeholders (<a href="https://github.com/eliocamp/rdlocal/pull/35">#35</a>)</li>
+<li>the translation-module skeleton generator <code>i18n_module_create()</code> (<a href="https://github.com/eliocamp/rdlocal/pull/36">#36</a>)</li>
+<li><code>i18n_module_update()</code>, which re-syncs a module after a package update and flags changed strings as <code>fuzzy</code></li>
+<li>the rename to rdlocal (<a href="https://github.com/eliocamp/rdlocal/pull/37">#37</a>)</li>
+</ul>
+<p>Write-up: <a href="https://adityabansal.dev/gsoc" class="uri">https://adityabansal.dev/gsoc</a>.</p>
+</section>
+<section id="contributors" class="level2">
+<h2>Contributors</h2>
+<!-- CONFIRM BEFORE SUBMITTING: keep only people who have said yes. Delete this block otherwise. -->
+<ul>
+<li><strong>Elio Campitelli</strong>: rdlocal author and maintainer, lead of the R Consortium Multilingual Documentation Working Group, GSoC 2026 co-mentor.</li>
+<li><strong>Heather Turner</strong>: GSoC 2026 co-mentor. Opened the R Project Sprint 2026 task on sharing translations between rdlocal and Weblate (<a href="https://github.com/r-devel/r-project-sprint-2026/issues/17">sprint #17</a>).</li>
+</ul>
+</section>
+<section id="consulted" class="level2">
+<h2>Consulted</h2>
+<p>The idea was posted for discussion at the R Project Sprint 2026 (<a href="https://github.com/r-devel/r-project-sprint-2026/issues/10">sprint #10</a>). The design below follows the feedback there, in particular Paola Corrales’s point that machine translation should speed up <em>shared, community</em> translation rather than per-user, one-off translation.</p>
+</section>
+</section>
+<section id="the-problem" class="level1">
+<h1>The Problem</h1>
+<section id="rdlocal-works-producing-translations-doesnt-scale" class="level2">
+<h2>rdlocal works; producing translations doesn’t scale</h2>
+<p>rdlocal lets a package’s help be read in another language without changing the package. A <em>translation module</em> holds one YAML file per help page, and each string’s <code>original</code> sits next to its <code>translation</code>. When a user opens a help page in their language, rdlocal swaps in the translated strings. Since GSoC 2026 it also keeps translations valid when a package is reinstalled or updated: dynamic values become <code>{ISEXPR_n}</code> placeholders, and changed strings are flagged <code>fuzzy</code> instead of being silently dropped.</p>
+<p>Every translation is still typed by hand. Approximate sizes of the translatable text (titles, descriptions, arguments, details, value), measured with <code>tools::Rd_db()</code>:</p>
+<table class="caption-top">
+<thead>
+<tr class="header">
+<th>Package</th>
+<th style="text-align: right;">Help topics</th>
+<th style="text-align: right;">Characters</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>base</td>
+<td style="text-align: right;">446</td>
+<td style="text-align: right;">1,142,000</td>
+</tr>
+<tr class="even">
+<td>stats</td>
+<td style="text-align: right;">313</td>
+<td style="text-align: right;">688,000</td>
+</tr>
+<tr class="odd">
+<td>utils</td>
+<td style="text-align: right;">160</td>
+<td style="text-align: right;">425,000</td>
+</tr>
+<tr class="even">
+<td>survival</td>
+<td style="text-align: right;">133</td>
+<td style="text-align: right;">282,000</td>
+</tr>
+<tr class="odd">
+<td>MASS</td>
+<td style="text-align: right;">155</td>
+<td style="text-align: right;">119,000</td>
+</tr>
+</tbody>
+</table>
+<p><code>base</code> alone is roughly 190,000 words. At a professional translator’s pace, that is months of work per language, and it has to be kept up to date. After creating a module during Sprint 2026 user testing, Paola Corrales wrote: <em>“Having translated only one yaml, I think it would be great to provide a way to get a machine translation as a starting point”</em> (<a href="https://github.com/r-devel/r-project-sprint-2026/issues/10">sprint #10</a>).</p>
+</section>
+<section id="why-just-run-it-through-a-translator-breaks-help-pages" class="level2">
+<h2>Why “just run it through a translator” breaks help pages</h2>
+<p>Help strings are not plain prose. This is part of <code>mean()</code>’s <code>x</code> argument as it appears in a module:</p>
+<pre><code>An \R{} object. Currently there are methods for numeric/logical vectors
+and \link[=Dates]{date}, \link{date-time} and \link{time interval} objects.
+Complex vectors are allowed for \code{trim = 0}, only.</code></pre>
+<p>A correct translation must:</p>
+<ul>
+<li>translate the link <em>text</em> (<code>date</code>) but keep the link <em>target</em> (<code>=Dates</code>);</li>
+<li>leave <code>\code{trim = 0}</code> and <code>\R{}</code> untouched;</li>
+<li>keep every <code>{ISEXPR_n}</code> placeholder exactly once.</li>
+</ul>
+<p>Generic machine translation gets these wrong. When it does, rdlocal can’t match or re-parse the page, and the user silently sees English or a broken page. Without guarding and checking, machine output creates more review work than it saves.</p>
+<p>The second gap is review. R’s message translations are reviewed on the R project’s Weblate instance, where bulk machine translation is added as “needs editing” for a human to check (<a href="https://github.com/r-devel/r-dev-day/issues/66">r-dev-day #66</a>). rdlocal modules are YAML inside R packages, and there is no path between them and Weblate or any other gettext tool. That task is open as <a href="https://github.com/r-devel/r-project-sprint-2026/issues/17">sprint #17</a>.</p>
+</section>
+<section id="existing-work" class="level2">
+<h2>Existing work</h2>
+<table class="caption-top">
+<thead>
+<tr class="header">
+<th>Tool</th>
+<th>What it does</th>
+<th>What it doesn’t do</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="https://github.com/mlverse/lang">lang</a> (Posit)</td>
+<td>Translates help live with an LLM, per user and per session</td>
+<td>Translations aren’t shared, reviewed or kept; every user pays again; no rdlocal placeholders</td>
+</tr>
+<tr class="even">
+<td><a href="https://docs.ropensci.org/babeldown/">babeldown</a> (rOpenSci, ISC 2022-2)</td>
+<td>DeepL translation of Markdown/Quarto with glossaries</td>
+<td>Doesn’t handle Rd markup or rdlocal modules. babelrd follows its approach for Rd.</td>
+</tr>
+<tr class="odd">
+<td><a href="https://cran.r-project.org/package=deeplr">deeplr</a></td>
+<td>DeepL API wrapper</td>
+<td>No knowledge of Rd or modules</td>
+</tr>
+<tr class="even">
+<td>R’s Weblate</td>
+<td>Reviewed translation of R’s <em>messages</em> (PO files)</td>
+<td>No help pages</td>
+</tr>
+<tr class="odd">
+<td>rdlocal</td>
+<td>Installs and serves translations; module update with <code>fuzzy</code></td>
+<td>Translations are written by hand only; no PO/Weblate exchange</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="what-solving-it-enables" class="level2">
+<h2>What solving it enables</h2>
+<ul>
+<li>A translation team can start a new package and language from a complete, render-checked draft instead of an empty file.</li>
+<li>Translators can review in Weblate, with its memory, glossary and review workflow, instead of editing YAML.</li>
+<li>Reviewed translations can later be offered for base and recommended packages.</li>
+</ul>
+<p>This builds on three earlier ISC investments:</p>
+<ul>
+<li>rhelpi18n/rdlocal (2023-2)</li>
+<li>babeldown (2022-2)</li>
+<li>the Consistent Translations Glossary (2025-2), which babelrd uses to keep terms consistent</li>
+</ul>
+<p>It also delivers two items on the Multilingual Documentation Working Group’s plan: <em>“keep translations up-to-date”</em> and <em>“transform between formats accepted by existing translation services”</em>.</p>
+<p>No changes to R itself are proposed.</p>
+</section>
+</section>
+<section id="the-proposal" class="level1">
+<h1>The proposal</h1>
+<section id="overview" class="level2">
+<h2>Overview</h2>
+<p>babelrd is a separate package. rdlocal stays free of API keys and network calls, as agreed in <a href="https://github.com/r-devel/r-project-sprint-2026/issues/10">sprint #10</a>. babelrd works on the module files that <code>rdlocal::i18n_module_create()</code> already produces:</p>
+<pre><code>package help ─ i18n_module_create() ─► module (YAML, empty translations)
+                                            │
+  babelrd::draft()    DeepL / Microsoft / Google / LLM (user&#39;s own key)
+                      markup + placeholders protected, glossary applied,
+                      every string written as fuzzy + provenance
+                                            │
+  babelrd::check()    re-parse, placeholder count, render, glossary
+                                            │
+  review in YAML  ◄─────────────────────────┴──► babelrd::to_po() / from_po()
+                                                  Weblate or any PO editor
+                                            │
+  publish: the module is installed and served by rdlocal as today</code></pre>
+<p>Sketch of the intended API:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>rdlocal<span class="sc">::</span><span class="fu">i18n_module_create</span>(<span class="st">&quot;MASS.es&quot;</span>, <span class="at">language =</span> <span class="st">&quot;es&quot;</span>,</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>                            <span class="at">module_path =</span> <span class="st">&quot;MASS.es&quot;</span>, <span class="at">package_path =</span> <span class="st">&quot;MASS&quot;</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>babelrd<span class="sc">::</span><span class="fu">estimate</span>(<span class="st">&quot;MASS.es&quot;</span>)                     <span class="co"># characters, cost vs free tiers</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>babelrd<span class="sc">::</span><span class="fu">draft</span>(<span class="st">&quot;MASS.es&quot;</span>, <span class="at">provider =</span> <span class="st">&quot;deepl&quot;</span>)    <span class="co"># key from DEEPL_API_KEY</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>babelrd<span class="sc">::</span><span class="fu">check</span>(<span class="st">&quot;MASS.es&quot;</span>)                        <span class="co"># per-page report</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>babelrd<span class="sc">::</span><span class="fu">to_po</span>(<span class="st">&quot;MASS.es&quot;</span>, <span class="st">&quot;MASS-es.po&quot;</span>)          <span class="co"># upload to Weblate</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>babelrd<span class="sc">::</span><span class="fu">from_po</span>(<span class="st">&quot;MASS.es&quot;</span>, <span class="st">&quot;MASS-es.po&quot;</span>)        <span class="co"># reviewed strings back in</span></span></code></pre></div>
+</section>
+<section id="detail" class="level2">
+<h2>Detail</h2>
+<section id="minimum-viable-product" class="level3">
+<h3>Minimum Viable Product</h3>
+<p><code>draft()</code> and <code>check()</code> with one provider (DeepL). They take an empty rdlocal module and produce a fully drafted module. Every page must pass the checks, and every drafted string is flagged <code>fuzzy</code>, so rdlocal already shows it with a note that the text is unreviewed. <code>draft()</code> only fills empty translations; it never overwrites human work.</p>
+</section>
+<section id="architecture" class="level3">
+<h3>Architecture</h3>
+<ol type="1">
+<li><strong>Protect.</strong> Each string is parsed into prose and protected spans:
+<ul>
+<li><code>\code{}</code>, <code>\link</code> targets, <code>\eqn</code>, <code>{ISEXPR_n}</code>, user macros and similar become opaque tokens;</li>
+<li>link text and <code>\emph{}</code> stay translatable.</li>
+</ul>
+For DeepL and Microsoft the tokens are sent as XML/HTML tags marked “do not translate”. For LLMs, <a href="https://ellmer.tidyverse.org/">ellmer</a> with structured output is used, which also allows local models via Ollama.</li>
+<li><strong>Translate</strong> in batches per help page, so terms stay consistent within a page. Glossary terms from <a href="https://github.com/r-devel/glossary">r-devel/glossary</a> are passed as a DeepL glossary or as prompt constraints.</li>
+<li><strong>Restore and check.</strong>
+<ul>
+<li>Each placeholder must appear exactly once.</li>
+<li>The string must re-parse as Rd.</li>
+<li>The page must render with <code>tools::Rd2txt()</code>.</li>
+<li>Glossary terms must be used.</li>
+</ul>
+Strings that fail are left empty (never broken) and listed in the report.</li>
+<li><strong>Record provenance.</strong> Each drafted string gets <code>fuzzy: yes</code> and <code>machine: &lt;provider&gt; &lt;date&gt;</code> (additive YAML fields).</li>
+<li><strong>PO bridge.</strong>
+<ul>
+<li>One PO entry per string, with <code>msgctxt</code> = topic + section + argument, so entries map back to YAML.</li>
+<li><code>fuzzy</code> ⇄ gettext <code>#, fuzzy</code> (Weblate’s “needs editing”).</li>
+<li>Placeholders are declared with Weblate’s <code>placeholders:</code> check flag, so translators can’t drop them.</li>
+<li><code>from_po()</code> writes only strings whose <code>msgid</code> still equals the module’s <code>original</code>. Anything else is reported, so a stale PO can never overwrite newer text.</li>
+</ul></li>
+</ol>
+</section>
+<section id="assumptions" class="level3">
+<h3>Assumptions</h3>
+<ul>
+<li><strong>Module schema:</strong> the YAML schema in rdlocal stays stable, or changes additively. I work with its maintainer, and I wrote the current version.</li>
+<li><strong>Machine translation quality:</strong> drafts are good enough that reviewing is faster than translating. Bulk machine translation tried on R’s Weblate let a translator progress faster, but drafts “sometimes got the meaning completely wrong” (<a href="https://github.com/r-devel/r-dev-day/issues/66">r-dev-day #66</a>). For that reason nothing is ever marked reviewed automatically. Milestone 4 measures the edit rate.</li>
+<li><strong>CRAN:</strong> rdlocal is on r-universe only (it patches <code>utils:::.getHelpFile</code>). babelrd will also be distributed through r-universe. It uses rdlocal only for module I/O, so it can move to CRAN together with rdlocal.</li>
+</ul>
+</section>
+<section id="external-dependencies" class="level3">
+<h3>External dependencies</h3>
+<ul>
+<li>rdlocal</li>
+<li>yaml</li>
+<li>httr2 (DeepL, Microsoft and Google APIs)</li>
+<li>ellmer (LLMs, optional)</li>
+<li>r-devel/glossary data (optional)</li>
+<li>a PO parser: written in-package, since the format needed is small</li>
+<li>users’ own API keys: nothing is hosted or paid for by the project</li>
+</ul>
+<p>Weblate hosting of help-page components is not required for any deliverable. The PO files work with any gettext tool, such as Poedit.</p>
+</section>
+<section id="failure-modes-and-recovery" class="level3">
+<h3>Failure modes and recovery</h3>
+<table class="caption-top">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Risk</th>
+<th>Recovery</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>A provider mangles tokens</td>
+<td>Per-string retry with a stricter mode. If it still fails, leave the string empty and report it. The page falls back to English, as rdlocal already does.</td>
+</tr>
+<tr class="even">
+<td>Output quality is poor for a language</td>
+<td>Drafts stay <code>fuzzy</code>. The M4 edit-rate data is published, so teams can choose their provider.</td>
+</tr>
+<tr class="odd">
+<td>A provider changes its API or terms</td>
+<td>Backends sit behind a single small function each. There are at least two MT backends plus LLMs.</td>
+</tr>
+<tr class="even">
+<td>Weblate admins don’t want help-page components yet</td>
+<td>PO round-trip still works locally. Hosting becomes future work.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+</section>
+<section id="project-plan" class="level1">
+<h1>Project plan</h1>
+<section id="start-up-phase" class="level2">
+<h2>Start-up phase</h2>
+<ul>
+<li>The public repository <code>babelrd</code> is set up (GitHub, r-universe), with CI running R CMD check on Linux, macOS and Windows.</li>
+<li><strong>License:</strong> MIT for the package. Drafted translations inherit the module’s license, following the rdlocal module license work (<a href="https://github.com/eliocamp/rdlocal/issues/50">rdlocal #50</a>).</li>
+<li><strong>Reporting:</strong>
+<ul>
+<li>A public milestone board on GitHub.</li>
+<li>A short progress note at each milestone, posted to the ISC and the rdlocal issue tracker.</li>
+<li>Design questions that affect rdlocal (the YAML fields, where the PO functions live) are agreed with its maintainer before implementation.</li>
+</ul></li>
+</ul>
+</section>
+<section id="technical-delivery" class="level2">
+<h2>Technical delivery</h2>
+<p>Start: December 2026, after contract signature.</p>
+<table class="caption-top">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>#</th>
+<th>Milestone</th>
+<th>Deliverable</th>
+<th>Target date</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>M1</td>
+<td>Safe draft engine</td>
+<td><code>draft()</code>, <code>check()</code> and <code>estimate()</code> with the DeepL backend; token protection for Rd markup and placeholders; <code>fuzzy</code> + provenance fields; tests on the modules of 5 CRAN packages that use <code>\Sexpr</code> and user macros</td>
+<td>2027-02-15</td>
+</tr>
+<tr class="even">
+<td>M2</td>
+<td>PO / Weblate bridge</td>
+<td><code>to_po()</code> / <code>from_po()</code> with <code>msgctxt</code>, fuzzy mapping, stale-entry protection and Weblate placeholder flags; round-trip tests; guide to importing a module into Weblate</td>
+<td>2027-04-15</td>
+</tr>
+<tr class="odd">
+<td>M3</td>
+<td>Glossary + providers</td>
+<td>r-devel/glossary integration; Microsoft and Google backends; LLM backend via ellmer (incl. local Ollama)</td>
+<td>2027-05-31</td>
+</tr>
+<tr class="even">
+<td>M4</td>
+<td>Pilot + documentation</td>
+<td>Full Spanish draft of one recommended package (e.g. MASS). Community reviewers check a sample of 20 topics, and the edit rate per provider is published. Vignettes for translators and teams.</td>
+<td>2027-06-30</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="other-aspects" class="level2">
+<h2>Other aspects</h2>
+<ul>
+<li>All code will be public on GitHub under MIT, with issues open for contributions.</li>
+<li><strong>Outreach:</strong>
+<ul>
+<li>an announcement post and a delivery post on the R Consortium blog, with a short update at each milestone;</li>
+<li>posts in the Multilingual Documentation WG and on the R Contributors Slack translation channel;</li>
+<li>Mastodon/Bluesky;</li>
+<li>a talk or lightning talk submission to useR! 2027 or LatinR 2027.</li>
+</ul></li>
+<li>The pilot module will be offered to the Spanish rdlocal/LatinR community as a real test case.</li>
+</ul>
+</section>
+<section id="budget-funding-plan" class="level2">
+<h2>Budget &amp; funding plan</h2>
+<p>All labor, at $40/h. No hardware, travel or hosting. API usage is paid by users with their own keys, and the pilot fits within DeepL’s free tier. The milestones are ordered by priority: <strong>M1 alone</strong> gives translators a safe draft tool, and <strong>M1 + M2</strong> give the full draft → review loop.</p>
+<table class="caption-top">
+<thead>
+<tr class="header">
+<th>Milestone</th>
+<th style="text-align: right;">Hours</th>
+<th style="text-align: right;">Amount (USD)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>M1 Safe draft engine</td>
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">2,000</td>
+</tr>
+<tr class="even">
+<td>M2 PO / Weblate bridge</td>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">1,600</td>
+</tr>
+<tr class="odd">
+<td>M3 Glossary + providers</td>
+<td style="text-align: right;">30</td>
+<td style="text-align: right;">1,200</td>
+</tr>
+<tr class="even">
+<td>M4 Pilot + documentation</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">800</td>
+</tr>
+<tr class="odd">
+<td><strong>Total</strong></td>
+<td style="text-align: right;"><strong>140</strong></td>
+<td style="text-align: right;"><strong>5,600</strong></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="success" class="level1">
+<h1>Success</h1>
+<section id="definition-of-done" class="level2">
+<h2>Definition of done</h2>
+<ul>
+<li>babelrd is available from r-universe, and R CMD check passes on Linux, macOS and Windows.</li>
+<li>For the test modules, every drafted page passes <code>check()</code>: placeholders intact, the page re-parses and renders.</li>
+<li>A module goes YAML → PO → YAML with no change except the reviewed strings. This is covered by tests.</li>
+<li>A full Spanish draft of one recommended package has been published as an rdlocal module, with a public review report.</li>
+<li>There are two vignettes (translators; translation teams / Weblate) and the R Consortium blog posts.</li>
+</ul>
+</section>
+<section id="measuring-success" class="level2">
+<h2>Measuring success</h2>
+<ul>
+<li><strong>During the project:</strong> milestone dates are met, and CI stays green.</li>
+<li><strong>Draft quality:</strong> the share of strings that pass <code>check()</code> on the first try (target: over 95%).</li>
+<li><strong>Pilot:</strong> the edit rate from community review, published per provider, which tells teams whether drafts actually save time.</li>
+<li><strong>Adoption, within 6 months of the end:</strong>
+<ul>
+<li>new translation modules started with babelrd;</li>
+<li>at least one translation team using the PO route;</li>
+<li>issues and PRs from people other than me.</li>
+</ul></li>
+</ul>
+</section>
+<section id="future-work" class="level2">
+<h2>Future work</h2>
+<ul>
+<li>Hosting help-page components for base and recommended packages on R’s Weblate, if the admins and language teams want it.</li>
+<li>Drafting translations of vignettes by combining babelrd with babeldown (rdlocal issue <a href="https://github.com/eliocamp/rdlocal/issues/5">#5</a>).</li>
+<li>A hook in R’s help system so that rdlocal, and therefore babelrd modules, can go to CRAN (<a href="https://github.com/r-devel/r-project-sprint-2026/issues/16">sprint #16</a>).</li>
+</ul>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id = "quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+</body>
+
+</html>

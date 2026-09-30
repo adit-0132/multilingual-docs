@@ -1,0 +1,31 @@
+---
+title: "babelrd: machine-drafted, human-reviewed translations of R help pages"
+subtitle: "An rdlocal companion package with a Weblate bridge"
+author:
+  - name: Aditya Bansal
+    affiliations:
+      - "Indian Institute of Technology Madras (BS Data Science); GSoC 2026 contributor, R Project"
+
+date: today
+date-format: iso
+format:
+  html:
+    embed-resources: true
+  hikmah-pdf:
+    geometry:
+      - left=1.25in
+      - right=1.25in
+bibliography: references.bib
+---
+
+{{< include proposal/00-exec-summary.qmd >}}
+
+{{< include proposal/01-signatories.qmd >}}
+
+{{< include proposal/02-problemdefinition.qmd >}}
+
+{{< include proposal/03-proposal.qmd >}}
+
+{{< include proposal/04-timeline.qmd >}}
+
+{{< include proposal/05-success.qmd >}}
