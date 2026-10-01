@@ -2,21 +2,21 @@
 
 ## Project team
 
-**Aditya Bansal** (GitHub [\@adit-0132](https://github.com/adit-0132)) will do all development. As the GSoC 2026 contributor on *Multilingual Documentation of R Packages*, I wrote the parts of rdlocal that babelrd builds on. All are merged upstream:
+**Aditya Bansal** (GitHub [\@adit-0132](https://github.com/adit-0132)), GSoC 2026 contributor on rdlocal, co-mentored by Heather Turner and Elio Campitelli. I'm a listed author of rdlocal, and babelrd will build on the parts I wrote, all merged upstream:
 
-- dynamic `\Sexpr` / `#ifdef` placeholders ([#35](https://github.com/eliocamp/rdlocal/pull/35))
-- the translation-module skeleton generator `i18n_module_create()` ([#36](https://github.com/eliocamp/rdlocal/pull/36))
-- `i18n_module_update()`, which re-syncs a module after a package update and flags changed strings as `fuzzy`
-- the rename to rdlocal ([#37](https://github.com/eliocamp/rdlocal/pull/37))
+- [#35](https://github.com/eliocamp/rdlocal/pull/35): the read-time runtime that fills `{ISEXPR_n}` placeholders with live values
+- [#36](https://github.com/eliocamp/rdlocal/pull/36): `i18n_module_create()`, which builds a module from a package, and `i18n_module_update()`, which re-syncs it after an update and flags changed strings `fuzzy`
 
-Write-up: <https://adityabansal.dev/gsoc>.
+The summer, week by week: <https://adityabansal.dev/gsoc>.
 
 ## Contributors
 
-<!-- CONFIRM BEFORE SUBMITTING: keep only people who have said yes. Delete this block otherwise. -->
-- **Elio Campitelli**: rdlocal author and maintainer, lead of the R Consortium Multilingual Documentation Working Group, GSoC 2026 co-mentor.
-- **Heather Turner**: GSoC 2026 co-mentor. Opened the R Project Sprint 2026 task on sharing translations between rdlocal and Weblate ([sprint #17](https://github.com/r-devel/r-project-sprint-2026/issues/17)).
+None. I'll do all the work myself.
 
 ## Consulted
 
-The idea was posted for discussion at the R Project Sprint 2026 ([sprint #10](https://github.com/r-devel/r-project-sprint-2026/issues/10)). The design below follows the feedback there, in particular Paola Corrales's point that machine translation should speed up *shared, community* translation rather than per-user, one-off translation.
+It started as my own issue for the R Project Sprint 2026 ([sprint #10](https://github.com/r-devel/r-project-sprint-2026/issues/10)): plug in your own API key, get a machine draft of a module. Paola Corrales replied:
+
+> "Having translated only one yaml, I think it would be great to provide a way to get a machine translation as a starting point. [...] I don't think we should encourage individual users to use the package to translate documentation over and over again. This would be a waste of resources, and we'd lose the community aspect of what we do."
+
+That reshaped the design. A translation team uses its own key to draft one module, reviews it, and then everyone installs that same module.

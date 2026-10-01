@@ -2,42 +2,22 @@
 
 ## Start-up phase
 
-- The public repository `babelrd` is set up (GitHub, r-universe), with CI running R CMD check on Linux, macOS and Windows.
-- **License:** MIT for the package. Drafted translations inherit the module's license, following the rdlocal module license work ([rdlocal #50](https://github.com/eliocamp/rdlocal/issues/50)).
-- **Reporting:**
-  - A public milestone board on GitHub.
-  - A short progress note at each milestone, posted to the ISC and the rdlocal issue tracker.
-  - Design questions that affect rdlocal (the YAML fields, where the PO functions live) are agreed with its maintainer before implementation.
+babelrd gets a public GitHub repository and r-universe builds, MIT licensed, with a milestone board and an ISC note per milestone. Drafted translations take whatever license [rdlocal #50](https://github.com/eliocamp/rdlocal/issues/50) settles on.
 
 ## Technical delivery
 
-Start: December 2026, after contract signature.
-
-| # | Milestone | Deliverable | Target date |
-|---|---|---|---|
-| M1 | Safe draft engine | `draft()`, `check()` and `estimate()` with the DeepL backend; token protection for Rd markup and placeholders; `fuzzy` + provenance fields; tests on the modules of 5 CRAN packages that use `\Sexpr` and user macros | 2027-02-15 |
-| M2 | PO / Weblate bridge | `to_po()` / `from_po()` with `msgctxt`, fuzzy mapping, stale-entry protection and Weblate placeholder flags; round-trip tests; guide to importing a module into Weblate | 2027-04-15 |
-| M3 | Glossary + providers | r-devel/glossary integration; Microsoft and Google backends; LLM backend via ellmer (incl. local Ollama) | 2027-05-31 |
-| M4 | Pilot + documentation | Full Spanish draft of one recommended package (e.g. MASS). Community reviewers check a sample of 20 topics, and the edit rate per provider is published. Vignettes for translators and teams. | 2027-06-30 |
+| # | Milestone | Deliverable | Date | Hours | USD |
+|:--|:--------|:--------------------------------------------|:----------|----:|-----:|
+| M1 | Draft and check (DeepL) | `draft()`, `check()` and `estimate()`, run on a full MASS module, Elio's base.es and my [demo package](https://github.com/adit-0132/multilingual-docs) (all three `\Sexpr` stages) | 2027-02-15 | 50 | 2,000 |
+| M2 | PO / Weblate bridge | `to_po()` / `from_po()`, building on the approach in Ashish Tiwari's sprint #17 proof of concept; a MASS.es round trip; Weblate guide | 2027-04-15 | 40 | 1,600 |
+| M3 | Glossary and providers | r-devel/glossary; Microsoft and Google backends; optional [ellmer](https://ellmer.tidyverse.org/) LLM backend, including local Ollama | 2027-05-31 | 30 | 1,200 |
+| M4 | MASS pilot and docs | MASS.es draft (155 topics) published with its `check()` report and review sheet; edit rates for topics volunteers review by then (aim: 20); vignettes | 2027-06-30 | 20 | 800 |
+| | **Total** | | | **140** | **5,600** |
 
 ## Other aspects
 
-- All code will be public on GitHub under MIT, with issues open for contributions.
-- **Outreach:**
-  - an announcement post and a delivery post on the R Consortium blog, with a short update at each milestone;
-  - posts in the Multilingual Documentation WG and on the R Contributors Slack translation channel;
-  - Mastodon/Bluesky;
-  - a talk or lightning talk submission to useR! 2027 or LatinR 2027.
-- The pilot module will be offered to the Spanish rdlocal/LatinR community as a real test case.
+I'll write start and delivery posts for the R Consortium blog, share milestone updates in the Multilingual Documentation WG and on Mastodon, and submit a talk to LatinR or useR! 2027.
 
 ## Budget & funding plan
 
-All labor, at $40/h. No hardware, travel or hosting. API usage is paid by users with their own keys, and the pilot fits within DeepL's free tier. The milestones are ordered by priority: **M1 alone** gives translators a safe draft tool, and **M1 + M2** give the full draft → review loop.
-
-| Milestone | Hours | Amount (USD) |
-|---|---:|---:|
-| M1 Safe draft engine | 50 | 2,000 |
-| M2 PO / Weblate bridge | 40 | 1,600 |
-| M3 Glossary + providers | 30 | 1,200 |
-| M4 Pilot + documentation | 20 | 800 |
-| **Total** | **140** | **5,600** |
+All labour, at $40/h; the amounts per milestone are in the table above. API costs fall on the drafting team's own key. M1 alone gives translators a draft tool, and M1 plus M2 give the whole draft and review loop.

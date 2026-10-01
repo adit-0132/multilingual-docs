@@ -1,7 +1,9 @@
 # Executive Summary
 
-[rdlocal](https://github.com/eliocamp/rdlocal) (formerly rhelpi18n, ISC grant 2023-2) lets R users read package help pages in their own language by installing a translation module. After Google Summer of Code 2026 it handles dynamic content and package updates, and it was user-tested at the R Project Sprint 2026. The remaining bottleneck is producing translations: every string is written by hand in YAML files, and the help for `base` alone is about 1.1 million characters.
+In 2026 I spent 350 hours of Google Summer of Code on [rdlocal](https://github.com/eliocamp/rdlocal) (formerly rhelpi18n, ISC grant 2023-2). You install a small translation module, set your language, and R's help pages show up translated. After the summer it handles dynamic help and package updates. It all works, but every translation is still typed by hand, and the help for `base` alone is about 1 million characters.
 
-I propose **babelrd**, a companion package that fills a translation module with a machine-translated *first draft* using the user's own DeepL, Microsoft, Google or LLM key. It protects Rd markup and rdlocal placeholders, and it checks that every page still parses and renders. Every drafted string is marked `fuzzy` so readers and reviewers know it is unreviewed. A two-way bridge between modules and gettext PO files lets translation teams review drafts in Weblate, the platform R already uses for its messages. The output is one shared, reviewable module per package and language, not a private translation that each user pays for again.
+So I opened a Sprint issue pitching a bring-your-own-key machine translator. Paola Corrales, who had translated one module file, wanted the draft but not the per-user part, and she was right.
 
-The request is **$5,600** (140 hours at $40/h) over about seven months, in four milestones ordered so that partial funding still delivers a working draft → review loop.
+That became the design for **babelrd**: a companion package that will let a translation team machine-draft one shared rdlocal module per package and language, check that every page still renders, and then review the draft in Weblate or any PO editor. The MVP is `draft()` and `check()` with DeepL.
+
+I'm asking for **$5,600** (140 hours at $40/h), December 2026 to June 2027, in four milestones ordered so partial funding still leaves a working tool.

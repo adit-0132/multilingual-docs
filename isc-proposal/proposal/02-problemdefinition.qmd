@@ -1,63 +1,34 @@
 # The Problem
 
-## rdlocal works; producing translations doesn't scale
+## Translations are typed by hand
 
-rdlocal lets a package's help be read in another language without changing the package. A *translation module* holds one YAML file per help page, and each string's `original` sits next to its `translation`. When a user opens a help page in their language, rdlocal swaps in the translated strings. Since GSoC 2026 it also keeps translations valid when a package is reinstalled or updated: dynamic values become `{ISEXPR_n}` placeholders, and changed strings are flagged `fuzzy` instead of being silently dropped.
+A module holds one YAML file per help page, each string's `original` next to its `translation`, with live values kept as `{ISEXPR_n}` placeholders. rdlocal serves these files; it doesn't help you write them. Measured with `tools::Rd_db()`, the translatable help text is about 1 million characters for `base` (446 topics), 0.7 million for `stats`, 0.4 million for `utils` and 0.13 million for `MASS`. That's roughly 170,000 words for `base` alone, per language.
 
-Every translation is still typed by hand. Approximate sizes of the translatable text (titles, descriptions, arguments, details, value), measured with `tools::Rd_db()`:
+And rdlocal has contributors beyond me: during the R Project Sprint 2026 (1 to 3 September), where rdlocal was a user-testing task ([sprint #16](https://github.com/r-devel/r-project-sprint-2026/issues/16)), five people opened six pull requests on it.
 
-| Package | Help topics | Characters |
-|---|---:|---:|
-| base | 446 | 1,142,000 |
-| stats | 313 | 688,000 |
-| utils | 160 | 425,000 |
-| survival | 133 | 282,000 |
-| MASS | 155 | 119,000 |
+## Why plain machine translation breaks help pages
 
-`base` alone is roughly 190,000 words. At a professional translator's pace, that is months of work per language, and it has to be kept up to date. After creating a module during Sprint 2026 user testing, Paola Corrales wrote: *"Having translated only one yaml, I think it would be great to provide a way to get a machine translation as a starting point"* ([sprint #10](https://github.com/r-devel/r-project-sprint-2026/issues/10)).
-
-## Why "just run it through a translator" breaks help pages
-
-Help strings are not plain prose. This is part of `mean()`'s `x` argument as it appears in a module:
+It sounds like a translation task. It mostly isn't. This is `mean()`'s `x` argument in Elio's example module [base.es](https://github.com/eliocamp/base.es):
 
 ```
-An \R{} object. Currently there are methods for numeric/logical vectors
-and \link[=Dates]{date}, \link{date-time} and \link{time interval} objects.
-Complex vectors are allowed for \code{trim = 0}, only.
+an \R{} object.  Currently there are methods for
+    numeric/logical vectors and \link[=Dates]{date},
+    \link{date-time} and \link{time interval} objects.  Complex vectors
+    are allowed for \code{trim = 0}, only.
 ```
 
-A correct translation must:
+A correct translation changes the link text (`date`) but keeps the target (`=Dates`), leaves `\code{trim = 0}` and `\R{}` alone, and keeps every `{ISEXPR_n}` placeholder exactly once. Bare links are harder: the human Spanish translation there turns `\link{date-time}` into `\link[=date-time]{fecha-tiempo}`, adding a target so the link still resolves. Miss any of this and rdlocal can't match or re-parse the page, so the reader quietly gets English or a broken page.
 
-- translate the link *text* (`date`) but keep the link *target* (`=Dates`);
-- leave `\code{trim = 0}` and `\R{}` untouched;
-- keep every `{ISEXPR_n}` placeholder exactly once.
+## The review gap
 
-Generic machine translation gets these wrong. When it does, rdlocal can't match or re-parse the page, and the user silently sees English or a broken page. Without guarding and checking, machine output creates more review work than it saves.
-
-The second gap is review. R's message translations are reviewed on the R project's Weblate instance, where bulk machine translation is added as "needs editing" for a human to check ([r-dev-day #66](https://github.com/r-devel/r-dev-day/issues/66)). rdlocal modules are YAML inside R packages, and there is no path between them and Weblate or any other gettext tool. That task is open as [sprint #17](https://github.com/r-devel/r-project-sprint-2026/issues/17).
+R's own messages are translated on [Weblate](https://translate.rx.studio/), where bulk machine translation goes in as "needing edit" and isn't used until a translator reviews it ([r-dev-day #66](https://github.com/r-devel/r-dev-day/issues/66)). Modules have no working route there: an older `.po` workflow ([rdlocal #26](https://github.com/eliocamp/rdlocal/pull/26)) has been open since 2024 and predates the placeholders. Heather Turner opened that task as [sprint #17](https://github.com/r-devel/r-project-sprint-2026/issues/17), and Ashish Tiwari has posted a YAML to PO proof of concept on it.
 
 ## Existing work
 
-| Tool | What it does | What it doesn't do |
-|---|---|---|
-| [lang](https://github.com/mlverse/lang) (Posit) | Translates help live with an LLM, per user and per session | Translations aren't shared, reviewed or kept; every user pays again; no rdlocal placeholders |
-| [babeldown](https://docs.ropensci.org/babeldown/) (rOpenSci, ISC 2022-2) | DeepL translation of Markdown/Quarto with glossaries | Doesn't handle Rd markup or rdlocal modules. babelrd follows its approach for Rd. |
-| [deeplr](https://cran.r-project.org/package=deeplr) | DeepL API wrapper | No knowledge of Rd or modules |
-| R's Weblate | Reviewed translation of R's *messages* (PO files) | No help pages |
-| rdlocal | Installs and serves translations; module update with `fuzzy` | Translations are written by hand only; no PO/Weblate exchange |
+| Tool | What it does | Gap |
+|:--------------|:--------------------|:---------------------------|
+| [lang](https://github.com/mlverse/lang) (Posit) | Live LLM translation of help, per user, cached locally | Not reviewed or shared; no rdlocal placeholders. Its README: "only a human curated translation will be the best solution" |
+| [babeldown](https://docs.ropensci.org/babeldown/) (rOpenSci, ISC 2022-2) | DeepL for Markdown/Quarto, with glossaries | No Rd; babelrd follows its approach |
+| [deeplr](https://cran.r-project.org/package=deeplr) | DeepL API wrapper | No Rd handling |
 
-## What solving it enables
-
-- A translation team can start a new package and language from a complete, render-checked draft instead of an empty file.
-- Translators can review in Weblate, with its memory, glossary and review workflow, instead of editing YAML.
-- Reviewed translations can later be offered for base and recommended packages.
-
-This builds on three earlier ISC investments:
-
-- rhelpi18n/rdlocal (2023-2)
-- babeldown (2022-2)
-- the Consistent Translations Glossary (2025-2), which babelrd uses to keep terms consistent
-
-It also delivers two items on the Multilingual Documentation Working Group's plan: *"keep translations up-to-date"* and *"transform between formats accepted by existing translation services"*.
-
-No changes to R itself are proposed.
+This builds on ISC grants for rhelpi18n (2023-2), babeldown (2022-2) and the [Consistent Translations Glossary](https://github.com/r-devel/glossary) (2025-2). It contributes to two items on the [Multilingual Documentation Working Group's plan](https://github.com/RConsortium/multilingual-documentation-wg): *"Keep translations up-to-date"* and *"Transform between formats accepted by existing translation services"*. No changes to R itself are proposed.

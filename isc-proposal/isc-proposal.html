@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Aditya Bansal">
-<meta name="dcterms.date" content="2026-09-30">
+<meta name="dcterms.date" content="2026-10-02">
 
 <title>babelrd: machine-drafted, human-reviewed translations of R help pages</title>
 <style>
@@ -2235,7 +2235,7 @@ vertical-align: -.125em;
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">2026-09-30</p>
+      <p class="date">2026-10-02</p>
     </div>
   </div>
   
@@ -2249,234 +2249,128 @@ vertical-align: -.125em;
 
 <section id="executive-summary" class="level1">
 <h1>Executive Summary</h1>
-<p><a href="https://github.com/eliocamp/rdlocal">rdlocal</a> (formerly rhelpi18n, ISC grant 2023-2) lets R users read package help pages in their own language by installing a translation module. After Google Summer of Code 2026 it handles dynamic content and package updates, and it was user-tested at the R Project Sprint 2026. The remaining bottleneck is producing translations: every string is written by hand in YAML files, and the help for <code>base</code> alone is about 1.1 million characters.</p>
-<p>I propose <strong>babelrd</strong>, a companion package that fills a translation module with a machine-translated <em>first draft</em> using the user’s own DeepL, Microsoft, Google or LLM key. It protects Rd markup and rdlocal placeholders, and it checks that every page still parses and renders. Every drafted string is marked <code>fuzzy</code> so readers and reviewers know it is unreviewed. A two-way bridge between modules and gettext PO files lets translation teams review drafts in Weblate, the platform R already uses for its messages. The output is one shared, reviewable module per package and language, not a private translation that each user pays for again.</p>
-<p>The request is <strong>$5,600</strong> (140 hours at $40/h) over about seven months, in four milestones ordered so that partial funding still delivers a working draft → review loop.</p>
+<p>In 2026 I spent 350 hours of Google Summer of Code on <a href="https://github.com/eliocamp/rdlocal">rdlocal</a> (formerly rhelpi18n, ISC grant 2023-2). You install a small translation module, set your language, and R’s help pages show up translated. After the summer it handles dynamic help and package updates. It all works, but every translation is still typed by hand, and the help for <code>base</code> alone is about 1 million characters.</p>
+<p>So I opened a Sprint issue pitching a bring-your-own-key machine translator. Paola Corrales, who had translated one module file, wanted the draft but not the per-user part, and she was right.</p>
+<p>That became the design for <strong>babelrd</strong>: a companion package that will let a translation team machine-draft one shared rdlocal module per package and language, check that every page still renders, and then review the draft in Weblate or any PO editor. The MVP is <code>draft()</code> and <code>check()</code> with DeepL.</p>
+<p>I’m asking for <strong>$5,600</strong> (140 hours at $40/h), December 2026 to June 2027, in four milestones ordered so partial funding still leaves a working tool.</p>
 </section>
 <section id="signatories" class="level1">
 <h1>Signatories</h1>
 <section id="project-team" class="level2">
 <h2 class="anchored" data-anchor-id="project-team">Project team</h2>
-<p><strong>Aditya Bansal</strong> (GitHub <a href="https://github.com/adit-0132">@adit-0132</a>) will do all development. As the GSoC 2026 contributor on <em>Multilingual Documentation of R Packages</em>, I wrote the parts of rdlocal that babelrd builds on. All are merged upstream:</p>
+<p><strong>Aditya Bansal</strong> (GitHub <a href="https://github.com/adit-0132">@adit-0132</a>), GSoC 2026 contributor on rdlocal, co-mentored by Heather Turner and Elio Campitelli. I’m a listed author of rdlocal, and babelrd will build on the parts I wrote, all merged upstream:</p>
 <ul>
-<li>dynamic <code>\Sexpr</code> / <code>#ifdef</code> placeholders (<a href="https://github.com/eliocamp/rdlocal/pull/35">#35</a>)</li>
-<li>the translation-module skeleton generator <code>i18n_module_create()</code> (<a href="https://github.com/eliocamp/rdlocal/pull/36">#36</a>)</li>
-<li><code>i18n_module_update()</code>, which re-syncs a module after a package update and flags changed strings as <code>fuzzy</code></li>
-<li>the rename to rdlocal (<a href="https://github.com/eliocamp/rdlocal/pull/37">#37</a>)</li>
+<li><a href="https://github.com/eliocamp/rdlocal/pull/35">#35</a>: the read-time runtime that fills <code>{ISEXPR_n}</code> placeholders with live values</li>
+<li><a href="https://github.com/eliocamp/rdlocal/pull/36">#36</a>: <code>i18n_module_create()</code>, which builds a module from a package, and <code>i18n_module_update()</code>, which re-syncs it after an update and flags changed strings <code>fuzzy</code></li>
 </ul>
-<p>Write-up: <a href="https://adityabansal.dev/gsoc" class="uri">https://adityabansal.dev/gsoc</a>.</p>
+<p>The summer, week by week: <a href="https://adityabansal.dev/gsoc" class="uri">https://adityabansal.dev/gsoc</a>.</p>
 </section>
 <section id="contributors" class="level2">
 <h2 class="anchored" data-anchor-id="contributors">Contributors</h2>
-<!-- CONFIRM BEFORE SUBMITTING: keep only people who have said yes. Delete this block otherwise. -->
-<ul>
-<li><strong>Elio Campitelli</strong>: rdlocal author and maintainer, lead of the R Consortium Multilingual Documentation Working Group, GSoC 2026 co-mentor.</li>
-<li><strong>Heather Turner</strong>: GSoC 2026 co-mentor. Opened the R Project Sprint 2026 task on sharing translations between rdlocal and Weblate (<a href="https://github.com/r-devel/r-project-sprint-2026/issues/17">sprint #17</a>).</li>
-</ul>
+<p>None. I’ll do all the work myself.</p>
 </section>
 <section id="consulted" class="level2">
 <h2 class="anchored" data-anchor-id="consulted">Consulted</h2>
-<p>The idea was posted for discussion at the R Project Sprint 2026 (<a href="https://github.com/r-devel/r-project-sprint-2026/issues/10">sprint #10</a>). The design below follows the feedback there, in particular Paola Corrales’s point that machine translation should speed up <em>shared, community</em> translation rather than per-user, one-off translation.</p>
+<p>It started as my own issue for the R Project Sprint 2026 (<a href="https://github.com/r-devel/r-project-sprint-2026/issues/10">sprint #10</a>): plug in your own API key, get a machine draft of a module. Paola Corrales replied:</p>
+<blockquote class="blockquote">
+<p>“Having translated only one yaml, I think it would be great to provide a way to get a machine translation as a starting point. […] I don’t think we should encourage individual users to use the package to translate documentation over and over again. This would be a waste of resources, and we’d lose the community aspect of what we do.”</p>
+</blockquote>
+<p>That reshaped the design. A translation team uses its own key to draft one module, reviews it, and then everyone installs that same module.</p>
 </section>
 </section>
 <section id="the-problem" class="level1">
 <h1>The Problem</h1>
-<section id="rdlocal-works-producing-translations-doesnt-scale" class="level2">
-<h2 class="anchored" data-anchor-id="rdlocal-works-producing-translations-doesnt-scale">rdlocal works; producing translations doesn’t scale</h2>
-<p>rdlocal lets a package’s help be read in another language without changing the package. A <em>translation module</em> holds one YAML file per help page, and each string’s <code>original</code> sits next to its <code>translation</code>. When a user opens a help page in their language, rdlocal swaps in the translated strings. Since GSoC 2026 it also keeps translations valid when a package is reinstalled or updated: dynamic values become <code>{ISEXPR_n}</code> placeholders, and changed strings are flagged <code>fuzzy</code> instead of being silently dropped.</p>
-<p>Every translation is still typed by hand. Approximate sizes of the translatable text (titles, descriptions, arguments, details, value), measured with <code>tools::Rd_db()</code>:</p>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Package</th>
-<th style="text-align: right;">Help topics</th>
-<th style="text-align: right;">Characters</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>base</td>
-<td style="text-align: right;">446</td>
-<td style="text-align: right;">1,142,000</td>
-</tr>
-<tr class="even">
-<td>stats</td>
-<td style="text-align: right;">313</td>
-<td style="text-align: right;">688,000</td>
-</tr>
-<tr class="odd">
-<td>utils</td>
-<td style="text-align: right;">160</td>
-<td style="text-align: right;">425,000</td>
-</tr>
-<tr class="even">
-<td>survival</td>
-<td style="text-align: right;">133</td>
-<td style="text-align: right;">282,000</td>
-</tr>
-<tr class="odd">
-<td>MASS</td>
-<td style="text-align: right;">155</td>
-<td style="text-align: right;">119,000</td>
-</tr>
-</tbody>
-</table>
-<p><code>base</code> alone is roughly 190,000 words. At a professional translator’s pace, that is months of work per language, and it has to be kept up to date. After creating a module during Sprint 2026 user testing, Paola Corrales wrote: <em>“Having translated only one yaml, I think it would be great to provide a way to get a machine translation as a starting point”</em> (<a href="https://github.com/r-devel/r-project-sprint-2026/issues/10">sprint #10</a>).</p>
+<section id="translations-are-typed-by-hand" class="level2">
+<h2 class="anchored" data-anchor-id="translations-are-typed-by-hand">Translations are typed by hand</h2>
+<p>A module holds one YAML file per help page, each string’s <code>original</code> next to its <code>translation</code>, with live values kept as <code>{ISEXPR_n}</code> placeholders. rdlocal serves these files; it doesn’t help you write them. Measured with <code>tools::Rd_db()</code>, the translatable help text is about 1 million characters for <code>base</code> (446 topics), 0.7 million for <code>stats</code>, 0.4 million for <code>utils</code> and 0.13 million for <code>MASS</code>. That’s roughly 170,000 words for <code>base</code> alone, per language.</p>
+<p>And rdlocal has contributors beyond me: during the R Project Sprint 2026 (1 to 3 September), where rdlocal was a user-testing task (<a href="https://github.com/r-devel/r-project-sprint-2026/issues/16">sprint #16</a>), five people opened six pull requests on it.</p>
 </section>
-<section id="why-just-run-it-through-a-translator-breaks-help-pages" class="level2">
-<h2 class="anchored" data-anchor-id="why-just-run-it-through-a-translator-breaks-help-pages">Why “just run it through a translator” breaks help pages</h2>
-<p>Help strings are not plain prose. This is part of <code>mean()</code>’s <code>x</code> argument as it appears in a module:</p>
-<pre><code>An \R{} object. Currently there are methods for numeric/logical vectors
-and \link[=Dates]{date}, \link{date-time} and \link{time interval} objects.
-Complex vectors are allowed for \code{trim = 0}, only.</code></pre>
-<p>A correct translation must:</p>
-<ul>
-<li>translate the link <em>text</em> (<code>date</code>) but keep the link <em>target</em> (<code>=Dates</code>);</li>
-<li>leave <code>\code{trim = 0}</code> and <code>\R{}</code> untouched;</li>
-<li>keep every <code>{ISEXPR_n}</code> placeholder exactly once.</li>
-</ul>
-<p>Generic machine translation gets these wrong. When it does, rdlocal can’t match or re-parse the page, and the user silently sees English or a broken page. Without guarding and checking, machine output creates more review work than it saves.</p>
-<p>The second gap is review. R’s message translations are reviewed on the R project’s Weblate instance, where bulk machine translation is added as “needs editing” for a human to check (<a href="https://github.com/r-devel/r-dev-day/issues/66">r-dev-day #66</a>). rdlocal modules are YAML inside R packages, and there is no path between them and Weblate or any other gettext tool. That task is open as <a href="https://github.com/r-devel/r-project-sprint-2026/issues/17">sprint #17</a>.</p>
+<section id="why-plain-machine-translation-breaks-help-pages" class="level2">
+<h2 class="anchored" data-anchor-id="why-plain-machine-translation-breaks-help-pages">Why plain machine translation breaks help pages</h2>
+<p>It sounds like a translation task. It mostly isn’t. This is <code>mean()</code>’s <code>x</code> argument in Elio’s example module <a href="https://github.com/eliocamp/base.es">base.es</a>:</p>
+<pre><code>an \R{} object.  Currently there are methods for
+    numeric/logical vectors and \link[=Dates]{date},
+    \link{date-time} and \link{time interval} objects.  Complex vectors
+    are allowed for \code{trim = 0}, only.</code></pre>
+<p>A correct translation changes the link text (<code>date</code>) but keeps the target (<code>=Dates</code>), leaves <code>\code{trim = 0}</code> and <code>\R{}</code> alone, and keeps every <code>{ISEXPR_n}</code> placeholder exactly once. Bare links are harder: the human Spanish translation there turns <code>\link{date-time}</code> into <code>\link[=date-time]{fecha-tiempo}</code>, adding a target so the link still resolves. Miss any of this and rdlocal can’t match or re-parse the page, so the reader quietly gets English or a broken page.</p>
+</section>
+<section id="the-review-gap" class="level2">
+<h2 class="anchored" data-anchor-id="the-review-gap">The review gap</h2>
+<p>R’s own messages are translated on <a href="https://translate.rx.studio/">Weblate</a>, where bulk machine translation goes in as “needing edit” and isn’t used until a translator reviews it (<a href="https://github.com/r-devel/r-dev-day/issues/66">r-dev-day #66</a>). Modules have no working route there: an older <code>.po</code> workflow (<a href="https://github.com/eliocamp/rdlocal/pull/26">rdlocal #26</a>) has been open since 2024 and predates the placeholders. Heather Turner opened that task as <a href="https://github.com/r-devel/r-project-sprint-2026/issues/17">sprint #17</a>, and Ashish Tiwari has posted a YAML to PO proof of concept on it.</p>
 </section>
 <section id="existing-work" class="level2">
 <h2 class="anchored" data-anchor-id="existing-work">Existing work</h2>
 <table class="caption-top table">
 <thead>
 <tr class="header">
-<th>Tool</th>
-<th>What it does</th>
-<th>What it doesn’t do</th>
+<th style="text-align: left;">Tool</th>
+<th style="text-align: left;">What it does</th>
+<th style="text-align: left;">Gap</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td><a href="https://github.com/mlverse/lang">lang</a> (Posit)</td>
-<td>Translates help live with an LLM, per user and per session</td>
-<td>Translations aren’t shared, reviewed or kept; every user pays again; no rdlocal placeholders</td>
+<td style="text-align: left;"><a href="https://github.com/mlverse/lang">lang</a> (Posit)</td>
+<td style="text-align: left;">Live LLM translation of help, per user, cached locally</td>
+<td style="text-align: left;">Not reviewed or shared; no rdlocal placeholders. Its README: “only a human curated translation will be the best solution”</td>
 </tr>
 <tr class="even">
-<td><a href="https://docs.ropensci.org/babeldown/">babeldown</a> (rOpenSci, ISC 2022-2)</td>
-<td>DeepL translation of Markdown/Quarto with glossaries</td>
-<td>Doesn’t handle Rd markup or rdlocal modules. babelrd follows its approach for Rd.</td>
+<td style="text-align: left;"><a href="https://docs.ropensci.org/babeldown/">babeldown</a> (rOpenSci, ISC 2022-2)</td>
+<td style="text-align: left;">DeepL for Markdown/Quarto, with glossaries</td>
+<td style="text-align: left;">No Rd; babelrd follows its approach</td>
 </tr>
 <tr class="odd">
-<td><a href="https://cran.r-project.org/package=deeplr">deeplr</a></td>
-<td>DeepL API wrapper</td>
-<td>No knowledge of Rd or modules</td>
-</tr>
-<tr class="even">
-<td>R’s Weblate</td>
-<td>Reviewed translation of R’s <em>messages</em> (PO files)</td>
-<td>No help pages</td>
-</tr>
-<tr class="odd">
-<td>rdlocal</td>
-<td>Installs and serves translations; module update with <code>fuzzy</code></td>
-<td>Translations are written by hand only; no PO/Weblate exchange</td>
+<td style="text-align: left;"><a href="https://cran.r-project.org/package=deeplr">deeplr</a></td>
+<td style="text-align: left;">DeepL API wrapper</td>
+<td style="text-align: left;">No Rd handling</td>
 </tr>
 </tbody>
 </table>
-</section>
-<section id="what-solving-it-enables" class="level2">
-<h2 class="anchored" data-anchor-id="what-solving-it-enables">What solving it enables</h2>
-<ul>
-<li>A translation team can start a new package and language from a complete, render-checked draft instead of an empty file.</li>
-<li>Translators can review in Weblate, with its memory, glossary and review workflow, instead of editing YAML.</li>
-<li>Reviewed translations can later be offered for base and recommended packages.</li>
-</ul>
-<p>This builds on three earlier ISC investments:</p>
-<ul>
-<li>rhelpi18n/rdlocal (2023-2)</li>
-<li>babeldown (2022-2)</li>
-<li>the Consistent Translations Glossary (2025-2), which babelrd uses to keep terms consistent</li>
-</ul>
-<p>It also delivers two items on the Multilingual Documentation Working Group’s plan: <em>“keep translations up-to-date”</em> and <em>“transform between formats accepted by existing translation services”</em>.</p>
-<p>No changes to R itself are proposed.</p>
+<p>This builds on ISC grants for rhelpi18n (2023-2), babeldown (2022-2) and the <a href="https://github.com/r-devel/glossary">Consistent Translations Glossary</a> (2025-2). It contributes to two items on the <a href="https://github.com/RConsortium/multilingual-documentation-wg">Multilingual Documentation Working Group’s plan</a>: <em>“Keep translations up-to-date”</em> and <em>“Transform between formats accepted by existing translation services”</em>. No changes to R itself are proposed.</p>
 </section>
 </section>
 <section id="the-proposal" class="level1">
 <h1>The proposal</h1>
 <section id="overview" class="level2">
 <h2 class="anchored" data-anchor-id="overview">Overview</h2>
-<p>babelrd is a separate package. rdlocal stays free of API keys and network calls, as agreed in <a href="https://github.com/r-devel/r-project-sprint-2026/issues/10">sprint #10</a>. babelrd works on the module files that <code>rdlocal::i18n_module_create()</code> already produces:</p>
-<pre><code>package help ─ i18n_module_create() ─► module (YAML, empty translations)
-                                            │
-  babelrd::draft()    DeepL / Microsoft / Google / LLM (user&#39;s own key)
-                      markup + placeholders protected, glossary applied,
-                      every string written as fuzzy + provenance
-                                            │
-  babelrd::check()    re-parse, placeholder count, render, glossary
-                                            │
-  review in YAML  ◄─────────────────────────┴──► babelrd::to_po() / from_po()
-                                                  Weblate or any PO editor
-                                            │
-  publish: the module is installed and served by rdlocal as today</code></pre>
-<p>Sketch of the intended API:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>rdlocal<span class="sc">::</span><span class="fu">i18n_module_create</span>(<span class="st">&quot;MASS.es&quot;</span>, <span class="at">language =</span> <span class="st">&quot;es&quot;</span>,</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>                            <span class="at">module_path =</span> <span class="st">&quot;MASS.es&quot;</span>, <span class="at">package_path =</span> <span class="st">&quot;MASS&quot;</span>)</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>babelrd<span class="sc">::</span><span class="fu">estimate</span>(<span class="st">&quot;MASS.es&quot;</span>)                     <span class="co"># characters, cost vs free tiers</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>babelrd<span class="sc">::</span><span class="fu">draft</span>(<span class="st">&quot;MASS.es&quot;</span>, <span class="at">provider =</span> <span class="st">&quot;deepl&quot;</span>)    <span class="co"># key from DEEPL_API_KEY</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>babelrd<span class="sc">::</span><span class="fu">check</span>(<span class="st">&quot;MASS.es&quot;</span>)                        <span class="co"># per-page report</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>babelrd<span class="sc">::</span><span class="fu">to_po</span>(<span class="st">&quot;MASS.es&quot;</span>, <span class="st">&quot;MASS-es.po&quot;</span>)          <span class="co"># upload to Weblate</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>babelrd<span class="sc">::</span><span class="fu">from_po</span>(<span class="st">&quot;MASS.es&quot;</span>, <span class="st">&quot;MASS-es.po&quot;</span>)        <span class="co"># reviewed strings back in</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>babelrd will be a separate package, as I proposed in <a href="https://github.com/r-devel/r-project-sprint-2026/issues/10">sprint #10</a>, so rdlocal stays free of API keys and network calls. The groundwork in rdlocal (#35, #36) exists; babelrd’s own code starts at M1.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>rdlocal<span class="sc">::</span><span class="fu">i18n_module_create</span>(<span class="st">&quot;path/to/MASS&quot;</span>, <span class="at">language =</span> <span class="st">&quot;es&quot;</span>,</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>                            <span class="at">module_name =</span> <span class="st">&quot;MASS.es&quot;</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>babelrd<span class="sc">::</span><span class="fu">estimate</span>(<span class="st">&quot;MASS.es&quot;</span>)                     <span class="co"># cost vs free tiers</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>babelrd<span class="sc">::</span><span class="fu">draft</span>(<span class="st">&quot;MASS.es&quot;</span>, <span class="at">provider =</span> <span class="st">&quot;deepl&quot;</span>)    <span class="co"># key from DEEPL_API_KEY</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>babelrd<span class="sc">::</span><span class="fu">check</span>(<span class="st">&quot;MASS.es&quot;</span>)                        <span class="co"># per-page report</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>babelrd<span class="sc">::</span><span class="fu">to_po</span>(<span class="st">&quot;MASS.es&quot;</span>, <span class="st">&quot;MASS-es.po&quot;</span>)          <span class="co"># for Weblate or Poedit</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>babelrd<span class="sc">::</span><span class="fu">from_po</span>(<span class="st">&quot;MASS.es&quot;</span>, <span class="st">&quot;MASS-es.po&quot;</span>)        <span class="co"># reviewed strings back in</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="detail" class="level2">
 <h2 class="anchored" data-anchor-id="detail">Detail</h2>
 <section id="minimum-viable-product" class="level3">
 <h3 class="anchored" data-anchor-id="minimum-viable-product">Minimum Viable Product</h3>
-<p><code>draft()</code> and <code>check()</code> with one provider (DeepL). They take an empty rdlocal module and produce a fully drafted module. Every page must pass the checks, and every drafted string is flagged <code>fuzzy</code>, so rdlocal already shows it with a note that the text is unreviewed. <code>draft()</code> only fills empty translations; it never overwrites human work.</p>
+<p><code>draft()</code> and <code>check()</code> with DeepL. Every drafted page passes the checks and every drafted string is <code>fuzzy</code>; human translations are never overwritten. rdlocal does show fuzzy strings to readers, with a note that says “may be out of date”, so teams publish after review, and I’ll propose a machine-draft wording upstream.</p>
 </section>
 <section id="architecture" class="level3">
 <h3 class="anchored" data-anchor-id="architecture">Architecture</h3>
 <ol type="1">
-<li><strong>Protect.</strong> Each string is parsed into prose and protected spans:
-<ul>
-<li><code>\code{}</code>, <code>\link</code> targets, <code>\eqn</code>, <code>{ISEXPR_n}</code>, user macros and similar become opaque tokens;</li>
-<li>link text and <code>\emph{}</code> stay translatable.</li>
-</ul>
-For DeepL and Microsoft the tokens are sent as XML/HTML tags marked “do not translate”. For LLMs, <a href="https://ellmer.tidyverse.org/">ellmer</a> with structured output is used, which also allows local models via Ollama.</li>
-<li><strong>Translate</strong> in batches per help page, so terms stay consistent within a page. Glossary terms from <a href="https://github.com/r-devel/glossary">r-devel/glossary</a> are passed as a DeepL glossary or as prompt constraints.</li>
-<li><strong>Restore and check.</strong>
-<ul>
-<li>Each placeholder must appear exactly once.</li>
-<li>The string must re-parse as Rd.</li>
-<li>The page must render with <code>tools::Rd2txt()</code>.</li>
-<li>Glossary terms must be used.</li>
-</ul>
-Strings that fail are left empty (never broken) and listed in the report.</li>
-<li><strong>Record provenance.</strong> Each drafted string gets <code>fuzzy: yes</code> and <code>machine: &lt;provider&gt; &lt;date&gt;</code> (additive YAML fields).</li>
-<li><strong>PO bridge.</strong>
-<ul>
-<li>One PO entry per string, with <code>msgctxt</code> = topic + section + argument, so entries map back to YAML.</li>
-<li><code>fuzzy</code> ⇄ gettext <code>#, fuzzy</code> (Weblate’s “needs editing”).</li>
-<li>Placeholders are declared with Weblate’s <code>placeholders:</code> check flag, so translators can’t drop them.</li>
-<li><code>from_po()</code> writes only strings whose <code>msgid</code> still equals the module’s <code>original</code>. Anything else is reported, so a stale PO can never overwrite newer text.</li>
-</ul></li>
+<li>Protect: <code>\code{}</code>, <code>\link</code> targets, <code>\eqn</code>, <code>{ISEXPR_n}</code> and user macros become do-not-translate tags; link text stays translatable.</li>
+<li>Translate one help page per batch, so terms stay consistent within a page. DeepL comes first because babeldown already uses it and the MASS pilot fits its free tier; r-dev-day #66 prefers Microsoft for bulk (2 million free characters a month against DeepL’s 500,000), and it follows in M3 with the <a href="https://github.com/r-devel/glossary">r-devel/glossary</a> terms.</li>
+<li>Check: placeholders exactly once, Rd re-parses, the page renders (<code>tools::Rd2txt()</code>), glossary terms used. Failing strings stay empty and go in the report.</li>
+<li>Mark: <code>fuzzy: yes</code> plus <code>machine: &lt;provider&gt; &lt;date&gt;</code>.</li>
+<li>PO bridge, in babelrd: <code>fuzzy</code> becomes gettext <code>#, fuzzy</code>, and <code>from_po()</code> skips entries whose <code>msgid</code> no longer matches <code>original</code>, so stale files can’t overwrite newer text.</li>
 </ol>
 </section>
 <section id="assumptions" class="level3">
 <h3 class="anchored" data-anchor-id="assumptions">Assumptions</h3>
 <ul>
-<li><strong>Module schema:</strong> the YAML schema in rdlocal stays stable, or changes additively. I work with its maintainer, and I wrote the current version.</li>
-<li><strong>Machine translation quality:</strong> drafts are good enough that reviewing is faster than translating. Bulk machine translation tried on R’s Weblate let a translator progress faster, but drafts “sometimes got the meaning completely wrong” (<a href="https://github.com/r-devel/r-dev-day/issues/66">r-dev-day #66</a>). For that reason nothing is ever marked reviewed automatically. Milestone 4 measures the edit rate.</li>
-<li><strong>CRAN:</strong> rdlocal is on r-universe only (it patches <code>utils:::.getHelpFile</code>). babelrd will also be distributed through r-universe. It uses rdlocal only for module I/O, so it can move to CRAN together with rdlocal.</li>
+<li>rdlocal’s module YAML stays stable or changes additively; I wrote its generator and updater.</li>
+<li>Drafts are good enough that reviewing beats translating. This is the real risk: on R’s Weblate, machine drafts let a translator progress “a little faster” but “sometimes got the meaning completely wrong” (<a href="https://github.com/r-devel/r-dev-day/issues/66">r-dev-day #66</a>). Nothing is marked reviewed automatically, and M4 measures the edit rate.</li>
 </ul>
 </section>
 <section id="external-dependencies" class="level3">
 <h3 class="anchored" data-anchor-id="external-dependencies">External dependencies</h3>
-<ul>
-<li>rdlocal</li>
-<li>yaml</li>
-<li>httr2 (DeepL, Microsoft and Google APIs)</li>
-<li>ellmer (LLMs, optional)</li>
-<li>r-devel/glossary data (optional)</li>
-<li>a PO parser: written in-package, since the format needed is small</li>
-<li>users’ own API keys: nothing is hosted or paid for by the project</li>
-</ul>
-<p>Weblate hosting of help-page components is not required for any deliverable. The PO files work with any gettext tool, such as Poedit.</p>
+<p>Imports yaml and httr2; ellmer is optional. rdlocal is only Suggested (to generate modules), since loading it patches <code>utils:::.getHelpFile</code>, so babelrd never touches R’s help system and could go to CRAN once rdlocal is in a repository. potools has no exported PO reader, so babelrd carries a small one.</p>
 </section>
-<section id="failure-modes-and-recovery" class="level3">
-<h3 class="anchored" data-anchor-id="failure-modes-and-recovery">Failure modes and recovery</h3>
+<section id="failure-modes" class="level3">
+<h3 class="anchored" data-anchor-id="failure-modes">Failure modes</h3>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 50%">
@@ -2490,20 +2384,12 @@ Strings that fail are left empty (never broken) and listed in the report.</li>
 </thead>
 <tbody>
 <tr class="odd">
-<td>A provider mangles tokens</td>
-<td>Per-string retry with a stricter mode. If it still fails, leave the string empty and report it. The page falls back to English, as rdlocal already does.</td>
+<td>A provider changes API or terms</td>
+<td>Each backend is one small function</td>
 </tr>
 <tr class="even">
-<td>Output quality is poor for a language</td>
-<td>Drafts stay <code>fuzzy</code>. The M4 edit-rate data is published, so teams can choose their provider.</td>
-</tr>
-<tr class="odd">
-<td>A provider changes its API or terms</td>
-<td>Backends sit behind a single small function each. There are at least two MT backends plus LLMs.</td>
-</tr>
-<tr class="even">
-<td>Weblate admins don’t want help-page components yet</td>
-<td>PO round-trip still works locally. Hosting becomes future work.</td>
+<td>R’s Weblate doesn’t take help pages yet</td>
+<td>PO files work in Poedit or any gettext editor</td>
 </tr>
 </tbody>
 </table>
@@ -2514,116 +2400,72 @@ Strings that fail are left empty (never broken) and listed in the report.</li>
 <h1>Project plan</h1>
 <section id="start-up-phase" class="level2">
 <h2 class="anchored" data-anchor-id="start-up-phase">Start-up phase</h2>
-<ul>
-<li>The public repository <code>babelrd</code> is set up (GitHub, r-universe), with CI running R CMD check on Linux, macOS and Windows.</li>
-<li><strong>License:</strong> MIT for the package. Drafted translations inherit the module’s license, following the rdlocal module license work (<a href="https://github.com/eliocamp/rdlocal/issues/50">rdlocal #50</a>).</li>
-<li><strong>Reporting:</strong>
-<ul>
-<li>A public milestone board on GitHub.</li>
-<li>A short progress note at each milestone, posted to the ISC and the rdlocal issue tracker.</li>
-<li>Design questions that affect rdlocal (the YAML fields, where the PO functions live) are agreed with its maintainer before implementation.</li>
-</ul></li>
-</ul>
+<p>babelrd gets a public GitHub repository and r-universe builds, MIT licensed, with a milestone board and an ISC note per milestone. Drafted translations take whatever license <a href="https://github.com/eliocamp/rdlocal/issues/50">rdlocal #50</a> settles on.</p>
 </section>
 <section id="technical-delivery" class="level2">
 <h2 class="anchored" data-anchor-id="technical-delivery">Technical delivery</h2>
-<p>Start: December 2026, after contract signature.</p>
 <table class="caption-top table">
-<colgroup>
-<col style="width: 25%">
-<col style="width: 25%">
-<col style="width: 25%">
-<col style="width: 25%">
-</colgroup>
 <thead>
 <tr class="header">
-<th>#</th>
-<th>Milestone</th>
-<th>Deliverable</th>
-<th>Target date</th>
+<th style="text-align: left;">#</th>
+<th style="text-align: left;">Milestone</th>
+<th style="text-align: left;">Deliverable</th>
+<th style="text-align: left;">Date</th>
+<th style="text-align: right;">Hours</th>
+<th style="text-align: right;">USD</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td>M1</td>
-<td>Safe draft engine</td>
-<td><code>draft()</code>, <code>check()</code> and <code>estimate()</code> with the DeepL backend; token protection for Rd markup and placeholders; <code>fuzzy</code> + provenance fields; tests on the modules of 5 CRAN packages that use <code>\Sexpr</code> and user macros</td>
-<td>2027-02-15</td>
+<td style="text-align: left;">M1</td>
+<td style="text-align: left;">Draft and check (DeepL)</td>
+<td style="text-align: left;"><code>draft()</code>, <code>check()</code> and <code>estimate()</code>, run on a full MASS module, Elio’s base.es and my <a href="https://github.com/adit-0132/multilingual-docs">demo package</a> (all three <code>\Sexpr</code> stages)</td>
+<td style="text-align: left;">2027-02-15</td>
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">2,000</td>
 </tr>
 <tr class="even">
-<td>M2</td>
-<td>PO / Weblate bridge</td>
-<td><code>to_po()</code> / <code>from_po()</code> with <code>msgctxt</code>, fuzzy mapping, stale-entry protection and Weblate placeholder flags; round-trip tests; guide to importing a module into Weblate</td>
-<td>2027-04-15</td>
+<td style="text-align: left;">M2</td>
+<td style="text-align: left;">PO / Weblate bridge</td>
+<td style="text-align: left;"><code>to_po()</code> / <code>from_po()</code>, building on the approach in Ashish Tiwari’s sprint #17 proof of concept; a MASS.es round trip; Weblate guide</td>
+<td style="text-align: left;">2027-04-15</td>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">1,600</td>
 </tr>
 <tr class="odd">
-<td>M3</td>
-<td>Glossary + providers</td>
-<td>r-devel/glossary integration; Microsoft and Google backends; LLM backend via ellmer (incl. local Ollama)</td>
-<td>2027-05-31</td>
+<td style="text-align: left;">M3</td>
+<td style="text-align: left;">Glossary and providers</td>
+<td style="text-align: left;">r-devel/glossary; Microsoft and Google backends; optional <a href="https://ellmer.tidyverse.org/">ellmer</a> LLM backend, including local Ollama</td>
+<td style="text-align: left;">2027-05-31</td>
+<td style="text-align: right;">30</td>
+<td style="text-align: right;">1,200</td>
 </tr>
 <tr class="even">
-<td>M4</td>
-<td>Pilot + documentation</td>
-<td>Full Spanish draft of one recommended package (e.g. MASS). Community reviewers check a sample of 20 topics, and the edit rate per provider is published. Vignettes for translators and teams.</td>
-<td>2027-06-30</td>
+<td style="text-align: left;">M4</td>
+<td style="text-align: left;">MASS pilot and docs</td>
+<td style="text-align: left;">MASS.es draft (155 topics) published with its <code>check()</code> report and review sheet; edit rates for topics volunteers review by then (aim: 20); vignettes</td>
+<td style="text-align: left;">2027-06-30</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">800</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"></td>
+<td style="text-align: left;"><strong>Total</strong></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: right;"><strong>140</strong></td>
+<td style="text-align: right;"><strong>5,600</strong></td>
 </tr>
 </tbody>
 </table>
 </section>
 <section id="other-aspects" class="level2">
 <h2 class="anchored" data-anchor-id="other-aspects">Other aspects</h2>
-<ul>
-<li>All code will be public on GitHub under MIT, with issues open for contributions.</li>
-<li><strong>Outreach:</strong>
-<ul>
-<li>an announcement post and a delivery post on the R Consortium blog, with a short update at each milestone;</li>
-<li>posts in the Multilingual Documentation WG and on the R Contributors Slack translation channel;</li>
-<li>Mastodon/Bluesky;</li>
-<li>a talk or lightning talk submission to useR! 2027 or LatinR 2027.</li>
-</ul></li>
-<li>The pilot module will be offered to the Spanish rdlocal/LatinR community as a real test case.</li>
-</ul>
+<p>I’ll write start and delivery posts for the R Consortium blog, share milestone updates in the Multilingual Documentation WG and on Mastodon, and submit a talk to LatinR or useR! 2027.</p>
 </section>
 <section id="budget-funding-plan" class="level2">
 <h2 class="anchored" data-anchor-id="budget-funding-plan">Budget &amp; funding plan</h2>
-<p>All labor, at $40/h. No hardware, travel or hosting. API usage is paid by users with their own keys, and the pilot fits within DeepL’s free tier. The milestones are ordered by priority: <strong>M1 alone</strong> gives translators a safe draft tool, and <strong>M1 + M2</strong> give the full draft → review loop.</p>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Milestone</th>
-<th style="text-align: right;">Hours</th>
-<th style="text-align: right;">Amount (USD)</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>M1 Safe draft engine</td>
-<td style="text-align: right;">50</td>
-<td style="text-align: right;">2,000</td>
-</tr>
-<tr class="even">
-<td>M2 PO / Weblate bridge</td>
-<td style="text-align: right;">40</td>
-<td style="text-align: right;">1,600</td>
-</tr>
-<tr class="odd">
-<td>M3 Glossary + providers</td>
-<td style="text-align: right;">30</td>
-<td style="text-align: right;">1,200</td>
-</tr>
-<tr class="even">
-<td>M4 Pilot + documentation</td>
-<td style="text-align: right;">20</td>
-<td style="text-align: right;">800</td>
-</tr>
-<tr class="odd">
-<td><strong>Total</strong></td>
-<td style="text-align: right;"><strong>140</strong></td>
-<td style="text-align: right;"><strong>5,600</strong></td>
-</tr>
-</tbody>
-</table>
+<p>All labour, at $40/h; the amounts per milestone are in the table above. API costs fall on the drafting team’s own key. M1 alone gives translators a draft tool, and M1 plus M2 give the whole draft and review loop.</p>
 </section>
 </section>
 <section id="success" class="level1">
@@ -2631,33 +2473,20 @@ Strings that fail are left empty (never broken) and listed in the report.</li>
 <section id="definition-of-done" class="level2">
 <h2 class="anchored" data-anchor-id="definition-of-done">Definition of done</h2>
 <ul>
-<li>babelrd is available from r-universe, and R CMD check passes on Linux, macOS and Windows.</li>
-<li>For the test modules, every drafted page passes <code>check()</code>: placeholders intact, the page re-parses and renders.</li>
-<li>A module goes YAML → PO → YAML with no change except the reviewed strings. This is covered by tests.</li>
-<li>A full Spanish draft of one recommended package has been published as an rdlocal module, with a public review report.</li>
-<li>There are two vignettes (translators; translation teams / Weblate) and the R Consortium blog posts.</li>
+<li>An empty module comes back drafted, every page passing <code>check()</code>.</li>
+<li>YAML to PO and back changes only the reviewed strings.</li>
+<li>MASS.es is published with its <code>check()</code> report, and edit rates for whatever topics were reviewed.</li>
 </ul>
 </section>
 <section id="measuring-success" class="level2">
 <h2 class="anchored" data-anchor-id="measuring-success">Measuring success</h2>
-<ul>
-<li><strong>During the project:</strong> milestone dates are met, and CI stays green.</li>
-<li><strong>Draft quality:</strong> the share of strings that pass <code>check()</code> on the first try (target: over 95%).</li>
-<li><strong>Pilot:</strong> the edit rate from community review, published per provider, which tells teams whether drafts actually save time.</li>
-<li><strong>Adoption, within 6 months of the end:</strong>
-<ul>
-<li>new translation modules started with babelrd;</li>
-<li>at least one translation team using the PO route;</li>
-<li>issues and PRs from people other than me.</li>
-</ul></li>
-</ul>
+<p>Target: over 95% of strings pass <code>check()</code> on the first try. The pilot’s edit rate shows whether drafts save time; I’ll publish it whatever it says. Six months on: modules started with babelrd, and issues from people other than me. I’ll keep maintaining babelrd after the grant and would happily move it next to rdlocal if its maintainer wants.</p>
 </section>
 <section id="future-work" class="level2">
 <h2 class="anchored" data-anchor-id="future-work">Future work</h2>
 <ul>
-<li>Hosting help-page components for base and recommended packages on R’s Weblate, if the admins and language teams want it.</li>
-<li>Drafting translations of vignettes by combining babelrd with babeldown (rdlocal issue <a href="https://github.com/eliocamp/rdlocal/issues/5">#5</a>).</li>
-<li>A hook in R’s help system so that rdlocal, and therefore babelrd modules, can go to CRAN (<a href="https://github.com/r-devel/r-project-sprint-2026/issues/16">sprint #16</a>).</li>
+<li>Hosting help pages on R’s Weblate, if its admins want them.</li>
+<li>Vignettes, via babeldown (<a href="https://github.com/eliocamp/rdlocal/issues/5">rdlocal #5</a>).</li>
 </ul>
 </section>
 </section>
